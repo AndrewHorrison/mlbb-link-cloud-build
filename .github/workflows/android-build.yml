@@ -27,6 +27,23 @@ jobs:
           test -d source/mlbb-link/waydroid-touch-bridge
           test -d source/mlbb-link/phone-controller
 
+      - name: Patch Java float conversion for touch coordinates
+        run: |
+          python3 - <<'PYCODE'
+          from pathlib import Path
+          source = Path("source/mlbb-link/waydroid-touch-bridge/app/src/main/java/com/mlbblink/bridge/TouchAccessibilityService.java")
+          text = source.read_text()
+          old = 'tap(screenPoint(o.optDouble("x",0.5),o.optDouble("y",0.5)));'
+          new = 'tap(screenPoint((float)o.optDouble("x",0.5),(float)o.optDouble("y",0.5)));'
+          if old in text:
+              source.write_text(text.replace(old, new, 1))
+              print("Patched double-to-float conversion in touch bridge")
+          elif new in text:
+              print("Touch bridge float conversion already fixed")
+          else:
+              raise SystemExit("Expected touch-coordinate code was not found; inspect source before building")
+          PYCODE
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
