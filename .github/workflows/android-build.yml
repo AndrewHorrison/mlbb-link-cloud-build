@@ -49,6 +49,17 @@ jobs:
           test -d source/mlbb-link/phone-controller
           test -f source/mlbb-link/host/mlbb_link_host.py
 
+      - name: Inspect Android source entry points for UI and IP fixes
+        run: |
+          find source/mlbb-link/phone-controller/app/src/main -type f | sort
+          echo "=== IP/UI references ==="
+          grep -RniE 'ip address|ipAddress|local.?ip|server.?ip|EditText|setContentView|skill|cooldown|joystick|TextView|Compose|WebView' source/mlbb-link/phone-controller/app/src/main --include='*.java' --include='*.kt' --include='*.xml' | head -240 || true
+          echo "=== App source files ==="
+          find source/mlbb-link/phone-controller/app/src/main -type f \( -name '*.java' -o -name '*.kt' -o -name '*.xml' \) -print0 | while IFS= read -r -d '' f; do
+            echo "===== $f ====="
+            sed -n '1,260p' "$f"
+          done
+
       - name: Ensure microphone permission is declared
         run: |
           python3 - <<'PYCODE'
