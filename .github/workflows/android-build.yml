@@ -6,6 +6,7 @@ on:
     paths:
       - 'MLBB-Link-MVP.tar.gz'
       - '.github/workflows/android-build.yml'
+      - 'overrides/phone/MainActivity.java'
 
 permissions:
   contents: read
