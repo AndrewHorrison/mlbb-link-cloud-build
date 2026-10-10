@@ -6,6 +6,8 @@ on:
     paths:
       - 'MLBB-Link-MVP.tar.gz'
       - '.github/workflows/android-build.yml'
+      - 'patch_project.py'
+      - 'overrides/bridge/MainActivity.java'
 
 permissions:
   contents: read
@@ -14,7 +16,7 @@ jobs:
   build:
     name: Build Phone Controller and Waydroid Bridge
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -39,7 +41,7 @@ jobs:
           unzip -q "$RUNNER_TEMP/gradle-8.9-bin.zip" -d "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/gradle-8.9/bin" >> "$GITHUB_PATH"
 
-      - name: Extract updated project source
+      - name: Extract source and apply UI/network fixes
         run: |
           set -euo pipefail
           test -s MLBB-Link-MVP.tar.gz
@@ -48,17 +50,27 @@ jobs:
           test -d source/mlbb-link/waydroid-touch-bridge
           test -d source/mlbb-link/phone-controller
           test -f source/mlbb-link/host/mlbb_link_host.py
+          python3 patch_project.py source/mlbb-link
+          cp overrides/bridge/MainActivity.java source/mlbb-link/waydroid-touch-bridge/app/src/main/java/com/mlbblink/bridge/MainActivity.java
+          python3 -m py_compile source/mlbb-link/host/mlbb_link_host.py
 
-      - name: Inspect Android source entry points for UI and IP fixes
+      - name: Bundle real hero skill artwork
         run: |
-          find source/mlbb-link/phone-controller/app/src/main -type f | sort
-          echo "=== IP/UI references ==="
-          grep -RniE 'ip address|ipAddress|local.?ip|server.?ip|EditText|setContentView|skill|cooldown|joystick|TextView|Compose|WebView' source/mlbb-link/phone-controller/app/src/main --include='*.java' --include='*.kt' --include='*.xml' | head -240 || true
-          echo "=== App source files ==="
-          find source/mlbb-link/phone-controller/app/src/main -type f \( -name '*.java' -o -name '*.kt' -o -name '*.xml' \) -print0 | while IFS= read -r -d '' f; do
-            echo "===== $f ====="
-            sed -n '1,260p' "$f"
-          done
+          set -euo pipefail
+          assets="source/mlbb-link/phone-controller/app/src/main/res/drawable-nodpi"
+          mkdir -p "$assets"
+          base="https://mlbb.mezes.uz/img/skills"
+          curl -fL --retry 5 --retry-all-errors "$base/nana__skill1-100.webp" -o "$assets/skill_nana_1.webp"
+          curl -fL --retry 5 --retry-all-errors "$base/nana__skill2-100.webp" -o "$assets/skill_nana_2.webp"
+          curl -fL --retry 5 --retry-all-errors "$base/nana__ultimate-100.webp" -o "$assets/skill_nana_3.webp"
+          curl -fL --retry 5 --retry-all-errors "$base/dyrroth__skill1-100.webp" -o "$assets/skill_dyrroth_1.webp"
+          curl -fL --retry 5 --retry-all-errors "$base/dyrroth__skill2-100.webp" -o "$assets/skill_dyrroth_2.webp"
+          curl -fL --retry 5 --retry-all-errors "$base/dyrroth__ultimate-100.webp" -o "$assets/skill_dyrroth_3.webp"
+          curl -fL --retry 5 --retry-all-errors "$base/sora__skill1-100.webp" -o "$assets/skill_sora_1.webp"
+          curl -fL --retry 5 --retry-all-errors "$base/sora__skill2-100.webp" -o "$assets/skill_sora_2.webp"
+          curl -fL --retry 5 --retry-all-errors "$base/sora__ultimate-100.webp" -o "$assets/skill_sora_3.webp"
+          file "$assets"/*.webp
+          test "$(find "$assets" -maxdepth 1 -name '*.webp' | wc -l)" -eq 9
 
       - name: Ensure microphone permission is declared
         run: |
@@ -86,15 +98,9 @@ jobs:
           new = 'tap(screenPoint((float)o.optDouble("x",0.5),(float)o.optDouble("y",0.5)));'
           if old in text:
               p.write_text(text.replace(old, new, 1))
-              print("Applied double-to-float coordinate fix")
-          elif new in text:
-              print("Coordinate fix already present")
-          else:
-              print("Coordinate handler not matched; leaving source unchanged")
+          elif new not in text:
+              raise SystemExit("Expected touch-coordinate handler not found")
           PYCODE
-
-      - name: Check PC host script syntax
-        run: python3 -m py_compile source/mlbb-link/host/mlbb_link_host.py
 
       - name: Build Waydroid Touch Bridge APK
         working-directory: source/mlbb-link/waydroid-touch-bridge
@@ -108,17 +114,19 @@ jobs:
           echo "sdk.dir=$ANDROID_HOME" > local.properties
           gradle --no-daemon --stacktrace assembleDebug
 
-      - name: Prepare APK downloads
+      - name: Prepare installable APKs and updated source
         run: |
           set -euo pipefail
           mkdir -p output
           cp source/mlbb-link/waydroid-touch-bridge/app/build/outputs/apk/debug/app-debug.apk output/MLBB-Link-Touch-Bridge.apk
           cp source/mlbb-link/phone-controller/app/build/outputs/apk/debug/app-debug.apk output/MLBB-Link-Phone-Controller.apk
+          cp source/mlbb-link/host/mlbb_link_host.py output/mlbb_link_host.py
+          tar -czf output/MLBB-Link-Updated-Source.tar.gz -C source mlbb-link
           cd output
-          sha256sum *.apk > SHA256SUMS.txt
-          zip -q MLBB-Link-APKs.zip *.apk SHA256SUMS.txt
+          sha256sum MLBB-Link-Touch-Bridge.apk MLBB-Link-Phone-Controller.apk > SHA256SUMS.txt
+          zip -q MLBB-Link-APKs.zip MLBB-Link-Touch-Bridge.apk MLBB-Link-Phone-Controller.apk SHA256SUMS.txt
 
-      - name: Upload installable APKs
+      - name: Upload downloads
         uses: actions/upload-artifact@v4
         with:
           name: MLBB-Link-APKs
