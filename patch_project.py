@@ -126,4 +126,13 @@ m = bridge_manifest.read_text()
 if 'android:usesCleartextTraffic="true"' not in m:
     m = m.replace("<application ", '<application android:usesCleartextTraffic="true" ', 1)
 bridge_manifest.write_text(m)
-print("Patched hero skill art, cooldown/name mapping, dark HUD background, dashboard network binding and LAN HTTP permission.")
+# Mark the updated controller and bridge as release 0.3.0.
+for gradle_file in [
+    root / "phone-controller/app/build.gradle",
+    root / "waydroid-touch-bridge/app/build.gradle",
+]:
+    gradle_text = gradle_file.read_text()
+    gradle_text = gradle_text.replace("versionCode 2; versionName '0.2.0'", "versionCode 3; versionName '0.3.0'")
+    gradle_file.write_text(gradle_text)
+
+print("Patched hero skill art, IP discovery, clean HUD, LAN dashboard binding, and app version 0.3.0.")
