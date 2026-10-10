@@ -37,7 +37,7 @@ jobs:
           text = p.read_text()
           permission = '    <uses-permission android:name="android.permission.RECORD_AUDIO" />'
           if "android.permission.RECORD_AUDIO" not in text:
-              text = text.replace('<manifest xmlns:android="http://schemas.android.com/apk/res/android">', '<manifest xmlns:android="http://schemas.android.com/apk/res/android">\\n' + permission, 1)
+              text = text.replace('<manifest xmlns:android="http://schemas.android.com/apk/res/android">', '<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n' + permission, 1)
           p.write_text(text)
           print("Applied controller source and microphone permission")
           PYCODE
