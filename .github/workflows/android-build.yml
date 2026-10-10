@@ -27,6 +27,20 @@ jobs:
           test -d source/mlbb-link/waydroid-touch-bridge
           test -d source/mlbb-link/phone-controller
 
+      - name: Apply upgraded phone controller and microphone permission
+        run: |
+          cp overrides/phone/MainActivity.java source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
+          python3 - <<'PYCODE'
+          from pathlib import Path
+          p = Path("source/mlbb-link/phone-controller/app/src/main/AndroidManifest.xml")
+          text = p.read_text()
+          permission = '    <uses-permission android:name="android.permission.RECORD_AUDIO" />'
+          if "android.permission.RECORD_AUDIO" not in text:
+              text = text.replace('<manifest xmlns:android="http://schemas.android.com/apk/res/android">', '<manifest xmlns:android="http://schemas.android.com/apk/res/android">\\n' + permission, 1)
+          p.write_text(text)
+          print("Applied controller source and microphone permission")
+          PYCODE
+
       - name: Patch Java float conversion for touch coordinates
         run: |
           python3 - <<'PYCODE'
