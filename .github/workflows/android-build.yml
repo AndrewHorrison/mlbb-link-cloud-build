@@ -269,6 +269,14 @@ jobs:
           s = s.replace('{6000, 9000, 40000}\n                {7000, 9000, 35000}',
                         '{6000, 9000, 40000},\n                {7000, 9000, 35000}', 1)
           p.write_text(s)
+          for gradle_path in (
+              Path("source/mlbb-link/phone-controller/app/build.gradle"),
+              Path("source/mlbb-link/waydroid-touch-bridge/app/build.gradle"),
+          ):
+              gradle = gradle_path.read_text()
+              if "buildFeatures { buildConfig true }" not in gradle:
+                  gradle = gradle.replace("android {", "android { buildFeatures { buildConfig true };", 1)
+                  gradle_path.write_text(gradle)
           PYFIX
           python3 -m py_compile source/mlbb-link/host/mlbb_link_host.py
           python3 - <<'PYCODE'
