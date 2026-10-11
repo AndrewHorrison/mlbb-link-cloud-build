@@ -233,7 +233,7 @@ def make_details(folder: Path, hero_names: list[str], keys: list[str], skill_dat
                 "source": "Moonton GMS" if item else "fallback",
             })
         records.append({"hero": name, "key": key, "skills": slots})
-    dest = folder.parent / "assets" / "hero_skill_details.json"
+    dest = folder.parent.parent / "assets" / "hero_skill_details.json"
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(json.dumps({"schemaVersion": 1, "heroes": records}, ensure_ascii=False, indent=2) + "\n")
 
