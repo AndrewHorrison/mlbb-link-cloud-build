@@ -475,8 +475,9 @@ jobs:
           if gh release view mlbb-link-beta >/dev/null 2>&1; then
             gh release upload mlbb-link-beta "$phone" "$bridge" "$host" "$source_bundle" --clobber
           else
-            gh release create mlbb-link-beta "$phone" "$bridge" "$host" "$source_bundle" --prerelease --title "MLBB Link v0.11.0 Beta" --notes-file output/RELEASE_NOTES.md
+            gh release create mlbb-link-beta "$phone" "$bridge" "$host" "$source_bundle" --prerelease --title "MLBB Link v0.12.0 Beta" --notes-file output/RELEASE_NOTES.md
           fi
+          gh release edit mlbb-link-beta --title "MLBB Link v0.12.0 Beta" --notes-file output/RELEASE_NOTES.md
           mkdir -p updates
           python3 - source/mlbb-link/phone-controller/app/build.gradle source/mlbb-link/host/mlbb_link_host.py output/MLBB-Link-Phone-Controller.apk output/MLBB-Link-Touch-Bridge.apk > updates/latest.json <<'PYCODE'
           import hashlib,json,re,sys
