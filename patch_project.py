@@ -1104,6 +1104,7 @@ s=s.replace('long total = cooldowns[heroIndex][skill];','long total = currentSki
 s=s.replace('text(c, skillNames[heroIndex][skill], x, y + r * 1.27f,','text(c, currentSkillName(skill), x, y + r * 1.27f,',1)
 s=s.replace('if (cooldownUntil[skill] <= now) cooldownUntil[skill] = now + cooldowns[heroIndex][skill];','if (cooldownUntil[skill] <= now) cooldownUntil[skill] = now + currentSkillCooldown(skill);',1)
 s=s.replace("        private void drawSkillButton(Canvas c,", "        private String currentSkillName(int skill) {\n            if (heroIndex == 2 && soraForm == 1) return new String[]{\"ASSASSIN • SHADOW CUT\", \"ASSASSIN • STORM DASH\", \"ASSASSIN • SKY EXECUTION\"}[skill];\n            if (heroIndex == 2 && soraForm == 2) return new String[]{\"TANK • THUNDER GUARD\", \"TANK • STORM BASTION\", \"TANK • HEAVEN AEGIS\"}[skill];\n            return skillNames[heroIndex][skill];\n        }\n        private long currentSkillCooldown(int skill) {\n            if (heroIndex == 2 && soraForm == 1) return new long[]{6500, 9000, 28000}[skill];\n            if (heroIndex == 2 && soraForm == 2) return new long[]{8000, 11000, 32000}[skill];\n            return cooldowns[heroIndex][skill];\n        }\n        private void drawSkillButton(Canvas c,", 1)
+s=s.replace("private boolean heroPickMode = true;", "private int heroPage = 0;\n        private int soraForm = 0;\n        private boolean heroPickMode = true;", 1)
 
 phone.write_text(s)
 
