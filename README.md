@@ -1,7 +1,10 @@
-# MLBB Link (0.11.0 Beta)
+# MLBB Link (0.12.0 Beta)
 
-## v0.11.0 Beta — PC connection center and versioned updates
+## v0.12.0 Beta — in-app updater and PC connection center
 
+- The Android controller now downloads the APK inside MLBB Link with a progress display, validates the published SHA-256 checksum, and opens Android's native install confirmation. It does not open a browser for the APK download.
+- Android may require enabling **Allow from this source** for MLBB Link once. Installation still needs user approval; ordinary Android apps cannot silently replace themselves.
+- The public update manifest includes APK checksums so the downloaded controller APK can be verified before installation.
 - Adds dedicated **Overview, Wi-Fi, USB, Bluetooth Beta, Dual Connection, and Updates** tabs to the PC host dashboard, with live transport status and copyable setup commands.
 - The dashboard detects a newer PC host version through `updates/latest.json` and links to the matching host script release asset. Stop and restart the Python host after replacing its script.
 - Releases now include the PC host script and an updated-source archive alongside the phone controller and Waydroid bridge APKs.
