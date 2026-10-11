@@ -1314,21 +1314,23 @@ if old_up not in s: raise SystemExit("Up handler not found")
 s=s.replace(old_up,new_up,1)
 
 aim_methods = '''        private boolean isAimCancelZone(float x, float y) {
-            return Math.abs(x - w * 0.56f) <= unit * 0.052f
-                    && Math.abs(y - h * 0.225f) <= unit * 0.043f;
+            // Default MLBB-style Cancel Cast region is above the skill cluster on the right.
+            // The user's in-game HUD can place this differently; keep the target clearly indicated.
+            return Math.abs(x - w * 0.86f) <= unit * 0.052f
+                    && Math.abs(y - h * 0.18f) <= unit * 0.043f;
         }
 
         private void drawAimOverlay(Canvas c) {
             if (aimPointer < 0 || aimSkill < 0) return;
             p.setStyle(Paint.Style.FILL); p.setShader(null); p.setColor(0xD909151F);
-            c.drawRoundRect(new RectF(w*0.20f, h*0.105f, w*0.80f, h*0.175f), unit*0.012f, unit*0.012f, p);
+            c.drawRoundRect(new RectF(w*0.20f, h*0.075f, w*0.75f, h*0.135f), unit*0.012f, unit*0.012f, p);
             String prompt = heroIndex == 2 && aimSkill == 2 && soraForm == 0
-                    ? "SWIPE LEFT: THUNDER     •     RIGHT: TORRENT"
-                    : "DRAG TO AIM   •   RELEASE TO CAST";
-            text(c, prompt, w*0.50f, h*0.148f, unit*0.019f, 0xFFFFD77A, true, Paint.Align.CENTER);
+                    ? "SWIPE LEFT: THUNDER  •  RIGHT: TORRENT"
+                    : "DRAG TO AIM  •  RELEASE TO CAST";
+            text(c, prompt, w*0.475f, h*0.115f, unit*0.016f, 0xFFFFD77A, true, Paint.Align.CENTER);
             p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(unit*0.004f); p.setColor(0xFFFFD77A);
             c.drawLine(aimStartX, aimStartY, aimX, aimY, p); c.drawCircle(aimX, aimY, unit*0.018f, p);
-            float cx = w*0.56f, cy = h*0.225f, cr = unit*0.050f;
+            float cx = w*0.86f, cy = h*0.18f, cr = unit*0.050f;
             p.setStyle(Paint.Style.FILL); p.setColor(aimCancelHovered ? 0xFFE23E4D : 0xCC401E29); c.drawCircle(cx, cy, cr, p);
             p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(unit*0.003f); p.setColor(aimCancelHovered ? Color.WHITE : 0xFFFF8791); c.drawCircle(cx, cy, cr, p);
             p.setStyle(Paint.Style.FILL); text(c, "CANCEL", cx, cy + unit*0.006f, unit*0.017f, Color.WHITE, true, Paint.Align.CENTER);
@@ -1349,7 +1351,7 @@ aim_methods = '''        private boolean isAimCancelZone(float x, float y) {
             int skill = Integer.parseInt(name.substring("skill".length()));
             boolean cancel = systemCancelled || (pointerId == aimPointer && (aimCancelHovered || isAimCancelZone(x, y)));
             if (cancel) {
-                emitGesture(name, "cancel", 0.56f, 0.225f);
+                emitGesture(name, "cancel", 0.86f, 0.18f);
                 Toast.makeText(MainActivity.this, "Skill cancelled", Toast.LENGTH_SHORT).show();
             } else {
                 emitGesture(name, "up", x / w, y / h);
