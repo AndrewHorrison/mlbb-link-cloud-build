@@ -169,7 +169,8 @@ def main() -> int:
                 if (!part.renameTo(apk)) throw new IOException("Cannot finalize the downloaded APK");
                 final File ready = apk;
                 final boolean checksumChecked = !expectedSha.isEmpty();
-                getSharedPreferences(PREFS, MODE_PRIVATE).edit().putInt("update_prompted_code", remoteCode).apply();
+                // Do not mark this version as handled until the user chooses LATER.
+                // If Android installation is cancelled or rejected, offer the update again next launch.
                 runOnUiThread(() -> {
                     if (progress.isShowing()) progress.dismiss();
                     updateDownloading = false;
