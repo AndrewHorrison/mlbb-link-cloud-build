@@ -269,6 +269,18 @@ jobs:
           s = s.replace('{6000, 9000, 40000}\n                {7000, 9000, 35000}',
                         '{6000, 9000, 40000},\n                {7000, 9000, 35000}', 1)
           p.write_text(s)
+          # BluetoothSocket exposes isConnected(), but not isClosed().
+          s = p.read_text()
+          s = s.replace("btSocket.isConnected() && !btSocket.isClosed() && btWriter != null",
+                        "btSocket.isConnected() && btWriter != null", 1)
+          p.write_text(s)
+          # Only exclude known Podman/Docker bridge ranges, not all RFC1918 172.16/12 LANs.
+          host_path = Path("source/mlbb-link/host/mlbb_link_host.py")
+          host_source = host_path.read_text()
+          host_source = host_source.replace(
+              'ipaddress.ip_network("172.16.0.0/12"),',
+              'ipaddress.ip_network("172.17.0.0/16"),\n        ipaddress.ip_network("172.18.0.0/16"),\n        ipaddress.ip_network("172.19.0.0/16"),', 1)
+          host_path.write_text(host_source)
           for gradle_path in (
               Path("source/mlbb-link/phone-controller/app/build.gradle"),
               Path("source/mlbb-link/waydroid-touch-bridge/app/build.gradle"),
