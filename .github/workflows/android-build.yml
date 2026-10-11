@@ -418,9 +418,9 @@ jobs:
           cp source/mlbb-link/phone-controller/app/build/outputs/apk/debug/app-debug.apk output/MLBB-Link-Phone-Controller.apk
           cp source/mlbb-link/host/mlbb_link_host.py output/mlbb_link_host.py
           cat > output/RELEASE_NOTES.md <<'NOTES'
-          # MLBB Link v0.12.0 Beta
+          # MLBB Link v0.12.0
 
-          A community beta for connecting an Android controller to the MLBB Link host on a PC / Waydroid setup. This release adds an in-app Android updater.
+          A community release for connecting an Android controller to the MLBB Link host on a PC / Waydroid setup. This release adds an in-app Android updater.
 
           ## What's new
           - PC dashboard connection center with Overview, Wi-Fi, USB, Bluetooth Beta, Dual Connection, and Updates tabs.
@@ -475,9 +475,16 @@ jobs:
           if gh release view mlbb-link-beta >/dev/null 2>&1; then
             gh release upload mlbb-link-beta "$phone" "$bridge" "$host" "$source_bundle" --clobber
           else
-            gh release create mlbb-link-beta "$phone" "$bridge" "$host" "$source_bundle" --prerelease --title "MLBB Link v0.12.0 Beta" --notes-file output/RELEASE_NOTES.md
+            gh release create mlbb-link-beta "$phone" "$bridge" "$host" "$source_bundle" --title "MLBB Link v0.12.0" --notes-file output/RELEASE_NOTES.md
           fi
-          gh release edit mlbb-link-beta --title "MLBB Link v0.12.0 Beta" --notes-file output/RELEASE_NOTES.md
+          gh release edit mlbb-link-beta --title "MLBB Link v0.12.0" --notes-file output/RELEASE_NOTES.md
+          release_id="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/mlbb-link-beta" --jq '.id')"
+          # Promote the existing rolling release to a normal public release (not a prerelease).
+          gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${release_id}" \
+            -F name="MLBB Link v0.12.0" \
+            -F prerelease=false \
+            -F draft=false \
+            -F body="$(cat output/RELEASE_NOTES.md)"
           mkdir -p updates
           python3 - source/mlbb-link/phone-controller/app/build.gradle source/mlbb-link/host/mlbb_link_host.py output/MLBB-Link-Phone-Controller.apk output/MLBB-Link-Touch-Bridge.apk > updates/latest.json <<'PYCODE'
           import hashlib,json,re,sys
