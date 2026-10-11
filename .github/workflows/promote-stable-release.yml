@@ -1,0 +1,47 @@
+name: Publish MLBB Link as a normal release
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/promote-stable-release.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    name: Promote existing v0.12.0 release
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Mark the rolling release as public and non-prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          release_id="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/mlbb-link-beta" --jq '.id')"
+          gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${release_id}" \
+            -F name="MLBB Link v0.12.0" \
+            -F prerelease=false \
+            -F draft=false \
+            -F body="$(cat <<'NOTES'
+          # MLBB Link v0.12.0
+
+          A public release of MLBB Link for connecting an Android controller to the MLBB Link host on a PC / Waydroid setup.
+
+          ## What's included
+          - Android phone controller APK with hero and skill controls.
+          - PC host dashboard with Overview, Wi-Fi, USB, Bluetooth Beta, Dual Connection, and Updates sections.
+          - In-app APK download with progress and SHA-256 verification.
+          - Android's native installer handles the final installation approval; Android does not permit this app to silently install its own updates.
+          - Waydroid touch bridge APK and Python PC host script.
+
+          ## Important notes
+          - Bluetooth and USB/Wi-Fi Dual Connection failover are experimental and still need testing on real devices.
+          - Test in Practice Mode first, not a ranked match.
+          - This is an independent community project and is not affiliated with or endorsed by Moonton.
+          NOTES
+          )"
+          status="$(gh api "repos/${GITHUB_REPOSITORY}/releases/${release_id}" --jq '[.name, .prerelease, .draft] | @tsv')"
+          printf 'Release status: %s\n' "$status"
+          test "$status" = $'MLBB Link v0.12.0\tfalse\tfalse'
