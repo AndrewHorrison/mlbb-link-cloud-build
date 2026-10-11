@@ -370,8 +370,8 @@ jobs:
           import json,re,sys
           from pathlib import Path
           text=Path(sys.argv[1]).read_text()
-          code=re.search(r"versionCode\\s+(\\d+)",text)
-          name=re.search(r"versionName\\s+'([^']+)'",text)
+          code=re.search(r"versionCode\s+(\d+)",text)
+          name=re.search(r"versionName\s+'([^']+)'",text)
           if not code or not name: raise SystemExit("Could not read Android app version")
           print(json.dumps({
             "versionCode":int(code.group(1)),
