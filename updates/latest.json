@@ -1,7 +1,10 @@
 {
-  "versionCode": 12,
-  "versionName": "0.10.0",
-  "phoneApkUrl": "https://github.com/augustinejacyandrew-lgtm/mlbb-link-cloud-build/releases/download/mlbb-link-beta/MLBB-Link-Phone-Controller.apk",
-  "bridgeApkUrl": "https://github.com/augustinejacyandrew-lgtm/mlbb-link-cloud-build/releases/download/mlbb-link-beta/MLBB-Link-Touch-Bridge.apk",
-  "releaseUrl": "https://github.com/augustinejacyandrew-lgtm/mlbb-link-cloud-build/releases/tag/mlbb-link-beta"
+  "versionCode": 13,
+  "versionName": "0.11.0",
+  "hostVersion": "0.11.0",
+  "phoneApkUrl": "https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/mlbb-link-beta/MLBB-Link-Phone-Controller.apk",
+  "bridgeApkUrl": "https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/mlbb-link-beta/MLBB-Link-Touch-Bridge.apk",
+  "hostScriptUrl": "https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/mlbb-link-beta/mlbb_link_host.py",
+  "sourceUrl": "https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/mlbb-link-beta/MLBB-Link-Updated-Source.tar.gz",
+  "releaseUrl": "https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/tag/mlbb-link-beta"
 }
