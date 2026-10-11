@@ -405,26 +405,37 @@ def main() -> int:
         image = open_image_url(url)
         if image is not None:
             save_webp(image, target)
-            return "official"
+            return "moonton"
+        # Secondary public art index used by earlier releases; optional per hero/skill.
+        filenames = ("skill1", "skill2", "ultimate")
+        alternate = f"https://mlbb.mezes.uz/img/skills/{key}__{filenames[slot]}-100.webp"
+        if alternate != url:
+            image = open_image_url(alternate)
+            if image is not None:
+                save_webp(image, target)
+                return "alternate"
         save_webp(generated_skill_icon(assets, key, slot, hero_name), target)
         return "fallback"
 
     downloaded = 0
+    alternate_downloaded = 0
     generated = 0
     # Use bounded concurrency so missing/slow CDN images can't make the build run serially for ages.
     with concurrent.futures.ThreadPoolExecutor(max_workers=16) as pool:
         futures = [pool.submit(fill_icon, job) for job in todo]
         for future in concurrent.futures.as_completed(futures):
             result = future.result()
-            if result == "official":
+            if result == "moonton":
                 downloaded += 1
+            elif result == "alternate":
+                alternate_downloaded += 1
             else:
                 generated += 1
 
     for hero_name, key in zip(heroes, keys):
         if not all((assets / f"skill_{key}_{i}.webp").exists() for i in (1, 2, 3)):
             raise RuntimeError(f"Failed to make all skill icons for {hero_name}")
-    print(f"Ensured {len(heroes) * 3} icon files exist for {len(heroes)} hero entries; downloaded {downloaded} official icons and generated {generated} fallbacks")
+    print(f"Ensured {len(heroes) * 3} icon files exist for {len(heroes)} hero entries; fetched {downloaded} Moonton and {alternate_downloaded} alternate icons; generated {generated} fallbacks")
     actual_names = update_java_skill_names(java_path, keys, heroes, skill_data)
     print(f"Applied official active skill names for {actual_names} heroes")
     make_details(assets, heroes, keys, skill_data)
