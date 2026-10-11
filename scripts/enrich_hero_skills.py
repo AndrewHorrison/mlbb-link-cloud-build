@@ -238,6 +238,38 @@ def make_details(folder: Path, hero_names: list[str], keys: list[str], skill_dat
     dest.write_text(json.dumps({"schemaVersion": 1, "heroes": records}, ensure_ascii=False, indent=2) + "\n")
 
 
+def make_sora_variants(folder: Path) -> None:
+    """Generate distinct Thunder/Torrent icon resources after base art is finalized."""
+    for form in ("thunder", "torrent"):
+        for i in range(1, 4):
+            src = folder / f"skill_sora_{i}.webp"
+            try:
+                with Image.open(src) as base:
+                    im = ImageOps.fit(base.convert("RGB"), (160, 160),
+                                      method=Image.Resampling.LANCZOS)
+            except Exception:
+                im = Image.new("RGB", (160, 160), (18, 36, 54))
+            overlay = Image.new("RGBA", (160, 160), (0, 0, 0, 0))
+            d = ImageDraw.Draw(overlay)
+            if form == "thunder":
+                accent = (97, 230, 255, 255)
+                d.ellipse((5, 5, 155, 155), outline=accent, width=7)
+                d.polygon([(90, 18), (48, 88), (77, 88), (60, 137),
+                           (115, 66), (87, 66)], fill=(120, 238, 255, 235))
+                tag = (25, 120, 173, 245)
+            else:
+                accent = (113, 244, 205, 255)
+                d.ellipse((5, 5, 155, 155), outline=accent, width=7)
+                for yy in (55, 80, 105):
+                    d.arc((25, yy-15, 135, yy+15), 190, 350,
+                          fill=(105, 255, 219, 255), width=7)
+                tag = (18, 132, 111, 245)
+            d.rounded_rectangle((10, 10, 84, 38), radius=8, fill=tag)
+            d.text((18, 16), form.upper(), font=load_font(14), fill=(255, 255, 255, 255))
+            save_webp(Image.alpha_composite(im.convert("RGBA"), overlay).convert("RGB"),
+                      folder / f"sora_{form}_{i}.webp")
+
+
 def main() -> int:
     if len(sys.argv) != 3:
         print("usage: enrich_hero_skills.py <phone-app-root> <generated-mainactivity-java>", file=sys.stderr)
@@ -278,7 +310,8 @@ def main() -> int:
     actual_names = update_java_skill_names(java_path, keys, heroes, skill_data)
     print(f"Applied official active skill names for {actual_names} heroes")
     make_details(assets, heroes, keys, skill_data)
-    print("Wrote structured hero_skill_details.json metadata")
+    make_sora_variants(assets)
+    print("Wrote structured hero_skill_details.json metadata and six Sora form icons")
     return 0
 
 
