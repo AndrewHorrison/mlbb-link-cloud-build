@@ -1,12 +1,13 @@
-# MLBB Link (0.7.0)
+# MLBB Link (0.8.0)
 
 A personal fan-made local-network controller prototype for Android and Waydroid.
 
 ## Latest controller updates
 
-- Nine hero choices: Nana, Dyrroth, Sora, Miya, Layla, Alucard, Tigreal, Gusion, and Fanny.
-- Compact 3×3 hero picker: each tile shows only the hero portrait icon and name; optional portrait fallback uses an initial when artwork is unavailable.
-- Sora forms: Base (Wispy Cloud), Thunder (Assassin / Stormy Cloud), and Torrent (Tank / Fluffy Cloud). Thunder and Torrent use their real variant skill names and separate icons when the optional assets are available; otherwise they fall back to Sora's base icons.
+- 20 hero choices: Nana, Dyrroth, Sora, Miya, Layla, Alucard, Tigreal, Gusion, Fanny, Alice, Saber, Balmond, Eudora, Zilong, Franco, Akai, Karina, Clint, Bruno, and Bane.
+- Compact paginated 3×3 hero picker: each tile shows only a hero portrait icon and name, with a custom Sora-cloud fallback if her external portrait is unavailable.
+- Skill aiming supports press-and-hold, drag-to-target and release-to-cast. A visible Cancel Cast target sends the held touch to the current default upper-right cancel area; adjust the in-game Cancel Cast layout if yours is different.
+- Sora forms: pressing the ultimate skill and swiping left selects Thunder; swiping right selects Torrent. The UI shows the 10-second local form timer. Cloudstep stacks are manually tracked by tapping the Sora form/stack label when a confirmed hero or summon hit occurs; the app cannot read live game hits or trigger True Art automatically.
 - PC LAN IP detection tries route/interface information, NetworkManager, then hostname addresses; NetworkManager fallback runs before reporting that the LAN IP was not detected. If the host is launched inside Distrobox/Toolbx, run it directly on Bazzite so it can detect the real Wi-Fi IP.
 - Cooldowns shown by the controller are estimates; the app does not read live game state.
 
