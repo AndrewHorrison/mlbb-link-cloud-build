@@ -1,4 +1,4 @@
-# MLBB Link (0.10.0 Beta)
+# MLBB Link (0.11.0 Beta)
 
 ## v0.11.0 Beta — PC connection center and versioned updates
 
