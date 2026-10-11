@@ -16,6 +16,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   build:
@@ -403,6 +404,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          latest_run="$(gh api "repos/\${GITHUB_REPOSITORY}/actions/workflows/android-build.yml/runs?branch=main&per_page=1" --jq '.workflow_runs[0].id')"
+          if [[ "$latest_run" != "$GITHUB_RUN_ID" ]]; then
+            echo "Skipping release publishing because run $latest_run is newer than $GITHUB_RUN_ID."
+            exit 0
+          fi
           phone="output/MLBB-Link-Phone-Controller.apk"
           bridge="output/MLBB-Link-Touch-Bridge.apk"
           keystore="$RUNNER_TEMP/MLBB-Link-Debug.keystore"
