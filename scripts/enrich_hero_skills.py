@@ -6,6 +6,7 @@ but every selectable hero still receives three visible skill-icon resources.
 """
 from __future__ import annotations
 
+import concurrent.futures
 import html as html_lib
 import json
 import re
@@ -389,7 +390,7 @@ def main() -> int:
         print(f"Loaded skill records for {len(skill_data)} heroes from the Moonton GMS API")
     except Exception as exc:
         print(f"WARNING: Official skill API unavailable; portraits + generated skill icons will be used: {exc}")
-    downloaded = 0
+    todo = []
     for hero_name, key in zip(heroes, keys):
         source_skills = skill_data.get(key) or []
         for i in range(3):
@@ -397,15 +398,33 @@ def main() -> int:
             # Preserve verified artwork from existing sources. Fill only missing slots from the API.
             if not target.exists():
                 actual = source_skills[i].get("url", "") if i < len(source_skills) else ""
-                image = open_image_url(actual)
-                if image is not None:
-                    save_webp(image, target)
-                    downloaded += 1
-                else:
-                    save_webp(generated_skill_icon(assets, key, i, hero_name), target)
+                todo.append((hero_name, key, i, target, actual))
+
+    def fill_icon(job: tuple[str, str, int, Path, str]) -> str:
+        hero_name, key, slot, target, url = job
+        image = open_image_url(url)
+        if image is not None:
+            save_webp(image, target)
+            return "official"
+        save_webp(generated_skill_icon(assets, key, slot, hero_name), target)
+        return "fallback"
+
+    downloaded = 0
+    generated = 0
+    # Use bounded concurrency so missing/slow CDN images can't make the build run serially for ages.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=16) as pool:
+        futures = [pool.submit(fill_icon, job) for job in todo]
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+            if result == "official":
+                downloaded += 1
+            else:
+                generated += 1
+
+    for hero_name, key in zip(heroes, keys):
         if not all((assets / f"skill_{key}_{i}.webp").exists() for i in (1, 2, 3)):
             raise RuntimeError(f"Failed to make all skill icons for {hero_name}")
-    print(f"Ensured {len(heroes) * 3} icon files exist for {len(heroes)} hero entries; downloaded {downloaded} official icons")
+    print(f"Ensured {len(heroes) * 3} icon files exist for {len(heroes)} hero entries; downloaded {downloaded} official icons and generated {generated} fallbacks")
     actual_names = update_java_skill_names(java_path, keys, heroes, skill_data)
     print(f"Applied official active skill names for {actual_names} heroes")
     make_details(assets, heroes, keys, skill_data)
