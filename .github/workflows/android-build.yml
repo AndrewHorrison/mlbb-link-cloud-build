@@ -1,5 +1,9 @@
 name: Build MLBB Link APKs
 
+concurrency:
+  group: mlbb-link-android-build
+  cancel-in-progress: true
+
 on:
   workflow_dispatch:
   push:
