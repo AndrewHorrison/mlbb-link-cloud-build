@@ -1,29 +1,39 @@
-# MLBB Link (0.9.0 Beta)
+# MLBB Link (0.10.0 Beta)
 
 A personal fan-made local-network controller for Android and Waydroid Mobile Legends: Bang Bang. Experimental input bridge; not affiliated with Moonton.
 
-## v0.9.0 Beta
-- Expands hero selection to 133 current roster entries, including all previously featured heroes first in the list.
-- Sora Thunder and Torrent forms have distinct generated skill icon overlays. Actual Sora game state is not read automatically.
-- Adds Wi-Fi UDP, USB-over-ADB TCP, **Dual Connection** (USB first, immediate Wi-Fi fallback on failed send), and experimental paired Bluetooth SPP.
-- PC host discovers usable LAN addresses with route and interface fallbacks, and should show the reachable Wi-Fi IP in its dashboard.
-- Phone controller and Touch Bridge check a published update manifest and prompt when a newer app version is available. Android still asks the user to approve installation; updates are downloaded from the release page.
-- Uses the same Android package IDs and a higher versionCode for upgrades from previous versions.
+## v0.10.0 Beta improvements
+- **133 selectable hero entries** with **399 bundled skill icon resources** (three per hero). The build prefers public Moonton game data and artwork; if a slot cannot be fetched, it creates a legible hero-specific fallback icon.
+- Loads official skill names and skill descriptions where the game data source returns them, and displays the current skill name/description while aiming.
+- Adds six separate Sora form visual variants: three Thunder and three Torrent icons.
+- PC host version is bumped to 0.10.0 and keeps retrying `adb reverse tcp:28744 tcp:28744`, so USB can become available when you plug in or authorize the phone after starting the host.
+- Refines host LAN IP detection and TCP acknowledgement handling.
+- Both Android apps use versionCode 12 / versionName 0.10.0. The workflow reuses the beta signing key for future in-place updates, and checks all 399 skill icons, skill metadata, and six Sora form icons before compilation.
+- GitHub Actions build and source/resource checks passed on [run 38134270885](https://github.com/augustinejacyandrew-lgtm/mlbb-link-cloud-build/actions/runs/38134270885).
 
 ## Connection setup
+
 **Wi-Fi:** Start the PC host, read the LAN IP from its dashboard, enter it in the phone app, and press Link.
 
-**USB:** Enable Android USB debugging, plug the phone into the Bazzite PC, authorize the PC on the phone, and keep the host script running. The host attempts `adb reverse tcp:28744 tcp:28744`. Choose USB on the phone.
+**USB:** Enable Android USB debugging, plug the phone into the Bazzite PC, accept the debugging authorization prompt, and keep the host script running. The host retries `adb reverse tcp:28744 tcp:28744`. Choose USB on the phone.
 
-**Dual Connection:** Choose DUAL. It prefers USB/TCP; when USB sends fail, events switch to Wi-Fi/UDP so the session can continue if the cable is disconnected. Make sure the Wi-Fi IP is filled in first. USB disconnect detection and network fallback should be tested on your actual devices before relying on it in ranked games.
+**Dual Connection:** Choose DUAL. It prefers USB/TCP; when USB sends fail, events fall back to Wi-Fi/UDP. Set the Wi-Fi IP first. The build verifies the host and controller code, but actual unplug/reconnect timing still needs testing on the specific phone/PC.
 
-**Bluetooth Beta:** Pair the phone and Bazzite PC first. Select BT BETA and select the paired PC. The PC needs BlueZ/RFCOMM support and the host needs permission to listen on RFCOMM channel 1. Bluetooth is experimental and may not be reliable for live gameplay.
+**Bluetooth Beta:** Pair the phone and Bazzite PC first. Select BT BETA and choose the paired PC. Bluetooth SPP remains experimental and is not recommended for competitive matches.
 
 ## PC host
-Run `python3 mlbb_link_host.py`. Install and enable the Waydroid Touch Bridge Accessibility service, and launch Mobile Legends in Waydroid.
 
-## Important limitations
-This is an experimental prototype. It does not read MLBB's live cooldowns, match state, enemy positions, or hero transformation state. The expanded hero roster is selectable, but many recently added heroes use generic placeholder skill labels, generic cooldown estimates, and fallback skill glyphs until hero-specific data/art is added. The Sora form icon variants are locally generated visual cues, not official in-game art. Test with practice mode first.
+Run `python3 mlbb_link_host.py` on Bazzite. Install the Touch Bridge APK in Waydroid and enable its Accessibility service, then launch Mobile Legends.
 
-## Build artifacts
-GitHub Actions builds APKs whenever the Android build workflow is triggered. A rolling prerelease at [MLBB Link Beta](https://github.com/augustinejacyandrew-lgtm/mlbb-link-cloud-build/releases/tag/mlbb-link-beta) serves the latest APKs and the update manifest is at `updates/latest.json`.
+## Known limits
+
+- CI verified compilation and checked all 133 metadata entries, 399 skill icons and six Sora form icons. The app has not been physically tested with every hero or on every device.
+- Some skill icons may be generated fallbacks where upstream image URLs are unavailable. Official descriptions can also be absent for some entries.
+- Cooldowns are not read from live match state. Enemy positions, match state and Sora's actual live transformation are not detected. Treat any local cooldown/form display as a helper, not authoritative game telemetry.
+- The update checker is included, but this repository and its raw update manifest are private. Automatic updates may not be accessible to anonymous users. Android also requires the user to approve APK installation.
+
+## Downloads
+
+- [Latest MLBB Link Beta release](https://github.com/augustinejacyandrew-lgtm/mlbb-link-cloud-build/releases/tag/mlbb-link-beta)
+- [Successful v0.10.0 build](https://github.com/augustinejacyandrew-lgtm/mlbb-link-cloud-build/actions/runs/38134270885)
+- Update manifest: `updates/latest.json`
