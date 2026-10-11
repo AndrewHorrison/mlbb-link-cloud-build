@@ -376,7 +376,7 @@ def main() -> int:
         return 2
     app_root = Path(sys.argv[1])
     java_path = Path(sys.argv[2])
-    assets = app_root / "src/main/res/drawable-nodpi"
+    assets = app_root / "app/src/main/res/drawable-nodpi"
     java = java_path.read_text()
     heroes = load_java_array(java, r"private final String\[\] heroes")
     keys = load_java_array(java, r"String\[\] keys")
