@@ -490,7 +490,7 @@ jobs:
           import re,sys
           from pathlib import Path
           text=Path(sys.argv[1]).read_text()
-          match=re.search(r"versionName\\s+['\\\"]([^'\\\"]+)['\\\"]",text)
+          match=re.search(r"versionName\s+['\"]([^'\"]+)['\"]",text)
           if not match: raise SystemExit("Could not read versionName for release tag")
           print("v"+match.group(1))
           PYTAG
