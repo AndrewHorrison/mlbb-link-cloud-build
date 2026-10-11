@@ -1,4 +1,4 @@
-# MLBB Link (0.5.0)
+# MLBB Link (0.5.1)
 
 A personal fan-made local-network controller prototype for Android and Waydroid.
 
@@ -55,6 +55,6 @@ The Touch Bridge app displays the detected PC IP; the phone controller checks th
 
 ## Connection and cooldown behavior
 
-The PC dashboard reports PHONE CONNECTED only while phone heartbeats are arriving, and PHONE DISCONNECTED after heartbeats stop. The phone's LINK status probes the PC dashboard rather than treating a typed IP as a successful connection.
+The PC dashboard reports PHONE CONNECTED only while phone heartbeats are arriving every 1.5 seconds, and PHONE DISCONNECTED after heartbeats stop. The phone's LINK status probes the PC dashboard rather than treating a typed IP as a successful connection.
 
 Battle spell cooldowns use current base estimates. Skill cooldowns are local estimates too; game patches, talents, and match rules can change them. The controller cannot read internal live MLBB game state, so countdown rings are not guaranteed to match actual in-match readiness.

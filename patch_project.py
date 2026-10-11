@@ -929,6 +929,38 @@ s=s.replace('''        private void chooseHero(float x) {
             int next = Math.round((x / w - 0.045f) / 0.045f);
             if (next >= 0 && next < heroes.length) selectHero(next);
         }''',1)
+# Send a continuing heartbeat over UDP so the PC can distinguish a live controller from a saved IP.
+if "heartbeatScheduler" not in s:
+    s = s.replace(
+        'private final ExecutorService io = Executors.newSingleThreadExecutor();',
+        'private final ExecutorService io = Executors.newSingleThreadExecutor();\n        private final ScheduledExecutorService heartbeatScheduler = Executors.newSingleThreadScheduledExecutor();\n        private volatile boolean heartbeatStarted = false;',
+        1)
+    old_start = 'void start() { io.execute(this::ensureSocket); }'
+    new_start = """void start() {
+            io.execute(this::ensureSocket);
+            synchronized (this) {
+                if (!heartbeatStarted) {
+                    heartbeatStarted = true;
+                    heartbeatScheduler.scheduleAtFixedRate(() -> {
+                        try {
+                            JSONObject ping = new JSONObject();
+                            ping.put("type", "heartbeat");
+                            send(ping);
+                        } catch (Exception ignored) { }
+                    }, 0, 1500, TimeUnit.MILLISECONDS);
+                }
+            }
+        }"""
+    if old_start not in s:
+        raise SystemExit("Could not patch UDP sender start for heartbeat")
+    s = s.replace(old_start, new_start, 1)
+    old_stop = 'void stop() { if (socket != null) socket.close(); io.shutdownNow(); }'
+    new_stop = 'void stop() { heartbeatScheduler.shutdownNow(); if (socket != null) socket.close(); io.shutdownNow(); }'
+    if old_stop not in s:
+        raise SystemExit("Could not patch UDP sender stop for heartbeat")
+    s = s.replace(old_stop, new_stop, 1)
+
+
 phone.write_text(s)
 
 phone_manifest = root / "phone-controller/app/src/main/AndroidManifest.xml"
@@ -942,6 +974,7 @@ for gradle_file in [root / "phone-controller/app/build.gradle", root / "waydroid
     text_gradle=text_gradle.replace("versionCode 2; versionName '0.2.0'","versionCode 5; versionName '0.5.0'")
     text_gradle=text_gradle.replace("versionCode 3; versionName '0.3.0'","versionCode 5; versionName '0.5.0'")
     text_gradle=text_gradle.replace("versionCode 4; versionName '0.4.0'","versionCode 5; versionName '0.5.0'")
+    text_gradle=text_gradle.replace("versionCode 5; versionName '0.5.0'","versionCode 6; versionName '0.5.1'")
     gradle_file.write_text(text_gradle)
 
 print("Patched MLBB Link v0.5.0: LAN IP detection, connected/disconnected status, hero selection and battle spells.")
