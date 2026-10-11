@@ -72,6 +72,27 @@ jobs:
           file "$assets"/*.webp
           test "$(find "$assets" -maxdepth 1 -name '*.webp' | wc -l)" -eq 9
 
+      - name: Bundle additional hero artwork
+        run: |
+          set -euo pipefail
+          assets="source/mlbb-link/phone-controller/app/src/main/res/drawable-nodpi"
+          base="https://mlbb.mezes.uz/img/skills"
+          for hero in miya layla alucard tigreal gusion fanny; do
+            for spec in "skill1:1" "skill2:2" "ultimate:3"; do
+              source_name="$(printf '%s' "$spec" | cut -d: -f1)"
+              skill_no="$(printf '%s' "$spec" | cut -d: -f2)"
+              target="$assets/skill_${hero}_${skill_no}.webp"
+              tmp="$target.tmp"
+              if curl -fLsS --retry 2 --connect-timeout 10 "$base/${hero}__${source_name}-100.webp" -o "$tmp"; then
+                mv "$tmp" "$target"
+              else
+                rm -f "$tmp" "$target"
+                echo "Optional artwork not found for $hero $source_name; fallback glyph will be used"
+              fi
+            done
+          done
+          echo "Additional hero artwork fetch finished"
+
       - name: Bundle authentic battle-spell artwork
         run: |
           set -euo pipefail

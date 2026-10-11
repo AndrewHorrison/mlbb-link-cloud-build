@@ -1120,6 +1120,7 @@ for gradle_file in [root / "phone-controller/app/build.gradle", root / "waydroid
     text_gradle=text_gradle.replace("versionCode 4; versionName '0.4.0'","versionCode 5; versionName '0.5.0'")
     text_gradle=text_gradle.replace("versionCode 5; versionName '0.5.0'","versionCode 6; versionName '0.5.1'")
     text_gradle=text_gradle.replace("versionCode 6; versionName '0.5.1'","versionCode 7; versionName '0.5.2'")
+    text_gradle=text_gradle.replace("versionCode 7; versionName '0.5.2'","versionCode 8; versionName '0.6.1'")
     gradle_file.write_text(text_gradle)
 
 print("Patched MLBB Link v0.5.0: LAN IP detection, connected/disconnected status, hero selection and battle spells.")
