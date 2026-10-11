@@ -1,6 +1,14 @@
-# MLBB Link (0.5.2)
+# MLBB Link (0.6.1)
 
 A personal fan-made local-network controller prototype for Android and Waydroid.
+
+## Latest controller updates
+
+- Nine hero choices: Nana, Dyrroth, Sora, Miya, Layla, Alucard, Tigreal, Gusion, and Fanny.
+- Three-page hero picker with skill names and artwork where available.
+- Sora HUD modes: Base, Assassin, and Tank; each mode has its own skill labels and estimated cooldowns. The three Sora icon images are reused between modes until form-specific artwork is available.
+- PC LAN IP detection tries route/interface information, NetworkManager, then hostname addresses. If the host is launched inside Distrobox/Toolbx, run it directly on Bazzite so it can detect the real Wi-Fi IP.
+- Cooldowns shown by the controller are estimates; the app does not read live game state.
 
 ## What's included
 
