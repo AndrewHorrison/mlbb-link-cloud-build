@@ -253,6 +253,28 @@ jobs:
               raise SystemExit("Expected touch-coordinate handler not found")
           PYCODE
 
+      - name: Apply MLBB Link v0.9 transport and full-roster source patch
+        run: |
+          set -euo pipefail
+          test -s .feature-patch/v09.patch.gz.b64
+          base64 -d .feature-patch/v09.patch.gz.b64 | gzip -d > "$RUNNER_TEMP/mlbb-link-v09.patch"
+          patch --batch --forward -p1 -d source/mlbb-link < "$RUNNER_TEMP/mlbb-link-v09.patch"
+          python3 -m py_compile source/mlbb-link/host/mlbb_link_host.py
+          python3 - <<'PYCODE'
+          from pathlib import Path
+          root = Path("source/mlbb-link")
+          phone = (root / "phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java").read_text()
+          host = (root / "host/mlbb_link_host.py").read_text()
+          for marker in ("private void cycleConnectionMode", "checkForUpdates", "BT BETA", "DUAL"):
+              if marker not in phone: raise SystemExit("Expected v0.9 controller feature missing: " + marker)
+          if "start_tcp_control_server" not in host: raise SystemExit("USB TCP host relay missing")
+          for p in (root/"phone-controller/app/build.gradle", root/"waydroid-touch-bridge/app/build.gradle"):
+              gradle = p.read_text()
+              if "versionCode 11" not in gradle or "0.9.0" not in gradle:
+                  raise SystemExit("Unexpected app version in " + str(p))
+          print("v0.9 source patch applied and basic checks passed")
+          PYCODE
+
       - name: Build Waydroid Touch Bridge APK
         working-directory: source/mlbb-link/waydroid-touch-bridge
         run: |
