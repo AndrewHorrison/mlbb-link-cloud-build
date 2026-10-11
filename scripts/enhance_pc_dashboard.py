@@ -66,6 +66,9 @@ async function checkUpdate(){try{const r=await fetch('https://raw.githubusercont
     # Normalize legacy owner URLs throughout the dashboard and Android updater source.
     host = host.replace("augustinejacyandrew-lgtm/mlbb-link-cloud-build",
                         "AndrewHorrison/mlbb-link-cloud-build")
+    # Versioned release URLs keep dashboard downloads pinned to this exact build.
+    host = host.replace("/releases/download/mlbb-link-beta/", f"/releases/download/v{VERSION}/")
+    host = host.replace("/releases/tag/mlbb-link-beta", f"/releases/tag/v{VERSION}")
     hp.write_text(host, encoding="utf-8")
     phone_source = root / "phone-controller" / "app" / "src" / "main" / "java" / "com" / "mlbblink" / "controller" / "MainActivity.java"
     if phone_source.is_file():
