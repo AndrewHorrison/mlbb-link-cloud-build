@@ -419,6 +419,25 @@ def _ignored_interface(name: str) -> bool:
                          "tailscale", "wg", "tun", "zt", "cni", "flannel", "pter"))
 
 
+def _likely_container_ip(value: str, interface: str) -> bool:
+    """Reject common rootless-container addresses when they are presented as eth0."""
+    name = interface.lower().split("@", 1)[0]
+    if name not in {"eth0", "eth1", "ens3"}:
+        return False
+    try:
+        address = ipaddress.IPv4Address(value)
+    except ValueError:
+        return False
+    container_ranges = (
+        ipaddress.ip_network("172.16.0.0/12"),
+        ipaddress.ip_network("10.88.0.0/16"),
+        ipaddress.ip_network("10.89.0.0/16"),
+        ipaddress.ip_network("10.0.2.0/24"),
+        ipaddress.ip_network("10.0.3.0/24"),
+    )
+    return any(address in network for network in container_ranges)
+
+
 def detect_lan_ip() -> str:
     """Prefer a usable default-route IPv4 address; never pretend localhost is a LAN IP."""
     try:
@@ -426,7 +445,7 @@ def detect_lan_ip() -> str:
                                text=True, capture_output=True, timeout=1.5, check=False).stdout
         src = re.search(r"\bsrc\s+([0-9.]+)", route)
         dev = re.search(r"\bdev\s+([^\s]+)", route)
-        if src and dev and _usable_lan_ip(src.group(1)) and not _ignored_interface(dev.group(1)):
+        if src and dev and _usable_lan_ip(src.group(1)) and not _ignored_interface(dev.group(1)) and not _likely_container_ip(src.group(1), dev.group(1)):
             return src.group(1)
     except (OSError, subprocess.SubprocessError): pass
     try:
@@ -443,7 +462,7 @@ def detect_lan_ip() -> str:
             match = re.search(r"\d+:\s+([^\s]+).*?\binet\s+([0-9.]+)/", line)
             if not match: continue
             interface, address = match.group(1), match.group(2)
-            if _ignored_interface(interface) or not _usable_lan_ip(address): continue
+            if _ignored_interface(interface) or not _usable_lan_ip(address) or _likely_container_ip(address, interface): continue
             low = interface.lower()
             score = 100 if interface == default_dev else 0
             score += 40 if low.startswith(("wl", "wlan")) else 30 if low.startswith(("en", "eth")) else 0
@@ -456,12 +475,12 @@ def detect_lan_ip() -> str:
     try:
         sock.connect(("1.1.1.1", 80))
         address = sock.getsockname()[0]
-        if _usable_lan_ip(address): return address
+        if _usable_lan_ip(address) and not _likely_container_ip(address, "eth0"): return address
     except OSError: pass
     finally: sock.close()
     try:
         addresses = sorted({info[4][0] for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET)
-                            if info[0] == socket.AF_INET and _usable_lan_ip(info[4][0])})
+                            if info[0] == socket.AF_INET and _usable_lan_ip(info[4][0]) and not _likely_container_ip(info[4][0], "eth0")})
         if addresses: return addresses[0]
     except OSError: pass
     return "not detected"
@@ -481,6 +500,10 @@ js_old="document.getElementById('hostStatus').textContent=d.last_error||'Listeni
 js_new="document.getElementById('hostStatus').textContent=d.last_error||(d.phone_connected?'Phone heartbeat received':'Waiting for phone heartbeat');document.getElementById('selectedHero').textContent=d.selected_hero||'Not selected';document.getElementById('runState').textContent=d.phone_connected?'PHONE CONNECTED':'PHONE DISCONNECTED';document.getElementById('stateDot').classList.toggle('ok',!!d.phone_connected);"
 if js_old in h: h=h.replace(js_old,js_new,1)
 elif "document.getElementById('selectedHero')" not in h: raise SystemExit("Dashboard status JS missing")
+h = h.replace("document.getElementById('hostIp').textContent=d.host_ip||'Not detected';",
+            "document.getElementById('hostIp').textContent=(!d.host_ip||d.host_ip==='not detected')?'LAN IP NOT DETECTED':d.host_ip;", 1)
+h = h.replace("document.getElementById('hostStatus').textContent=d.last_error||(d.phone_connected?'Phone heartbeat received':'Waiting for phone heartbeat');",
+            "document.getElementById('hostStatus').textContent=(!d.host_ip||d.host_ip==='not detected')?'No usable LAN IPv4 found; run the host on Bazzite outside Distrobox/Toolbx':(d.last_error||(d.phone_connected?'Phone heartbeat received':'Waiting for phone heartbeat'));", 1)
 if 'id="selectedHero"' not in h:
     row='<div class="row"><span class="muted">Waydroid IP</span><span class="value" id="waydroidIp">Not detected</span></div>'
     if row not in h: raise SystemExit("Dashboard Waydroid row missing")
@@ -975,6 +998,7 @@ for gradle_file in [root / "phone-controller/app/build.gradle", root / "waydroid
     text_gradle=text_gradle.replace("versionCode 3; versionName '0.3.0'","versionCode 5; versionName '0.5.0'")
     text_gradle=text_gradle.replace("versionCode 4; versionName '0.4.0'","versionCode 5; versionName '0.5.0'")
     text_gradle=text_gradle.replace("versionCode 5; versionName '0.5.0'","versionCode 6; versionName '0.5.1'")
+    text_gradle=text_gradle.replace("versionCode 6; versionName '0.5.1'","versionCode 7; versionName '0.5.2'")
     gradle_file.write_text(text_gradle)
 
 print("Patched MLBB Link v0.5.0: LAN IP detection, connected/disconnected status, hero selection and battle spells.")

@@ -1,4 +1,4 @@
-# MLBB Link (0.5.1)
+# MLBB Link (0.5.2)
 
 A personal fan-made local-network controller prototype for Android and Waydroid.
 
@@ -6,7 +6,7 @@ A personal fan-made local-network controller prototype for Android and Waydroid.
 
 - **Phone Controller** — full-screen landscape HUD with a launch-time hero picker, real skill-art icons, 12 selectable battle spells with icons/base cooldown estimates, skill-up controls, cooldown overlays, saved PC IP and push-to-talk microphone. Long-press the battle-spell button to change spell; tap a hero badge to reopen hero selection.
 - **Hero skill artwork** — the build bundles the actual skill icons for Nana, Dyrroth and Sora rather than generic vector glyphs. The hero skill names now match the selected hero.
-- **PC host** — robust Wi-Fi/Ethernet IPv4 detection with dynamic retries, a visible/copyable PC IP, live phone connected/disconnected state based on heartbeats, selected hero, packet counters, and microphone status.
+- **PC host** — robust Wi-Fi/Ethernet IPv4 detection with dynamic retries that rejects common container-only addresses, a visible/copyable PC IP, live phone connected/disconnected state based on heartbeats, selected hero, packet counters, and microphone status.
 - **Waydroid Touch Bridge** — the app uses Android network-state access, probes the detected Waydroid gateway plus common fallback addresses, and keeps a manual IP fallback, plus a shortcut to Android Accessibility settings.
 - **Automatic Android builds** — GitHub Actions builds the phone and bridge APKs and uploads an artifact together with the updated source archive and patched PC host script.
 
