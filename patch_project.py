@@ -371,6 +371,278 @@ s = s.replace('''        private boolean heroTabHit(float x, float y) {
         private void chooseHero(float x) {
             int next = Math.round((x / w - 0.045f) / 0.045f);''')
 
+
+# MLBB skill targeting: hold on skill down, move to aim, release to cast.
+s = s.replace(
+    'private final Map<Integer, Long> buttonDownTimes = new HashMap<>();',
+    'private final Map<Integer, Long> buttonDownTimes = new HashMap<>();\\n        private int aimPointer = -1;\\n        private int aimSkill = -1;\\n        private float aimStartX, aimStartY, aimX, aimY;\\n        private boolean aimCancelHovered = false;\\n        private int soraFormPreview = 0;\\n        private long soraFormUntil = 0L;\\n        private int soraCloudstep = 0;',
+    1)
+s = s.replace('heroPage = index / 3;\\n            soraForm = 0;\\n            heroPickMode = false;',
+              'heroPage = index / 9;\\n            soraForm = 0;\\n            soraFormUntil = 0L;\\n            soraCloudstep = 0;\\n            heroPickMode = false;', 1)
+s = s.replace('''            drawBottomHints(canvas);
+            if (spellPickerOpen) drawBattleSpellPicker(canvas);
+            boolean cooling = spellCooldownUntil > SystemClock.uptimeMillis();
+            long now = SystemClock.uptimeMillis();''',
+'''            drawBottomHints(canvas);
+            if (aimPointer >= 0) drawAimOverlay(canvas);
+            if (spellPickerOpen) drawBattleSpellPicker(canvas);
+            long now = SystemClock.uptimeMillis();
+            if (heroIndex == 2 && soraForm != 0 && soraFormUntil > 0L && now >= soraFormUntil) {
+                soraForm = 0; soraFormUntil = 0L; invalidate();
+            }
+            boolean cooling = spellCooldownUntil > now || (heroIndex == 2 && soraForm != 0 && soraFormUntil > now);''', 1)
+
+top_old = '''            float heroY = h * 0.065f;
+            float heroR = unit * (heroes.length > 5 ? 0.0155f : 0.022f);
+            for (int i = 0; i < heroes.length; i++) {
+                float x = w * (0.045f + i * 0.035f);
+                p.setStyle(Paint.Style.FILL);
+                p.setColor(0xD90A141A);
+                c.drawCircle(x, heroY, heroR * 1.14f, p);
+                p.setStyle(Paint.Style.STROKE);
+                p.setStrokeWidth(i == heroIndex ? unit * 0.004f : unit * 0.0018f);
+                p.setColor(i == heroIndex ? 0xFFFFD36D : 0xFF60737B);
+                c.drawCircle(x, heroY, heroR, p);
+                p.setStyle(Paint.Style.FILL);
+                text(c, heroes[i].substring(0, 1), x, heroY + heroR * 0.34f,
+                        heroR * 1.05f, Color.WHITE, true, Paint.Align.CENTER);
+            }
+            if (heroIndex == 2) text(c, "SORA FORM: " + (soraForm == 0 ? "BASE" : (soraForm == 1 ? "THUNDER" : "TORRENT")),
+                    w * 0.285f, h * 0.165f, unit * 0.020f, 0xFFFFD77A, true, Paint.Align.CENTER);'''
+top_new = '''            float heroY = h * 0.065f, heroX = w * 0.067f, heroR = unit * 0.027f;
+            Bitmap activePortrait = heroPortraits[heroIndex];
+            if (activePortrait != null) drawCircularArt(c, activePortrait, heroX, heroY, heroR);
+            else {
+                p.setStyle(Paint.Style.FILL); p.setColor(heroColors[heroIndex]); c.drawCircle(heroX, heroY, heroR, p);
+                if (heroIndex == 2) {
+                    p.setColor(0xFFEAF8FF); c.drawCircle(heroX-heroR*0.18f, heroY-heroR*0.08f, heroR*0.40f, p);
+                    c.drawCircle(heroX+heroR*0.18f, heroY-heroR*0.18f, heroR*0.50f, p);
+                    c.drawCircle(heroX+heroR*0.43f, heroY+heroR*0.03f, heroR*0.31f, p);
+                    Path bolt = new Path(); bolt.moveTo(heroX+heroR*0.06f,heroY-heroR*0.05f); bolt.lineTo(heroX-heroR*0.17f,heroY+heroR*0.24f); bolt.lineTo(heroX+heroR*0.03f,heroY+heroR*0.24f); bolt.lineTo(heroX-heroR*0.04f,heroY+heroR*0.53f); bolt.lineTo(heroX+heroR*0.25f,heroY+heroR*0.13f); bolt.lineTo(heroX+heroR*0.09f,heroY+heroR*0.13f); bolt.close();
+                    p.setColor(0xFF2273B9); c.drawPath(bolt, p);
+                } else text(c, heroes[heroIndex].substring(0,1), heroX, heroY+heroR*0.34f, heroR, Color.WHITE, true, Paint.Align.CENTER);
+            }
+            p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(unit * 0.003f); p.setColor(0xFFFFD36D); c.drawCircle(heroX, heroY, heroR, p); p.setStyle(Paint.Style.FILL);
+            String activeName = heroes[heroIndex].substring(0,1) + heroes[heroIndex].substring(1).toLowerCase(java.util.Locale.ROOT);
+            text(c, activeName, w * 0.145f, h * 0.069f, unit * 0.025f, 0xFFF4F7FA, true, Paint.Align.LEFT);
+            if (heroIndex == 2) {
+                String formName = soraForm == 0 ? "BASE" : (soraForm == 1 ? "THUNDER" : "TORRENT");
+                text(c, formName + "  CLOUDSTEP " + soraCloudstep + "/5", w * 0.255f, h * 0.165f, unit * 0.018f, 0xFFFFD77A, true, Paint.Align.CENTER);
+                text(c, "TAP STACK WHEN A HERO HIT CONFIRMS", w * 0.255f, h * 0.195f, unit * 0.0105f, 0xFF9FB4C3, false, Paint.Align.CENTER);
+            }'''
+if top_old not in s: raise SystemExit("Top HUD block not found")
+s = s.replace(top_old, top_new, 1)
+
+s = s.replace('''                if (heroPickMode) {
+                    float cellW = w * 0.235f, cellH = h * 0.205f, gapX = w * 0.035f, gapY = h * 0.035f;
+                    float leftStart = (w - (3 * cellW + 2 * gapX)) * 0.5f, topStart = h * 0.205f;
+                    if (x >= leftStart && x <= w - leftStart && y >= topStart && y <= topStart + 3 * cellH + 2 * gapY) {
+                        int col = Math.min(2, Math.max(0, (int)((x - leftStart) / (cellW + gapX))));
+                        int row = Math.min(2, Math.max(0, (int)((y - topStart) / (cellH + gapY))));
+                        int selectedHero = row * 3 + col;
+                        if (selectedHero < heroes.length) selectHero(selectedHero);
+                    }
+                    return true;
+                }
+                if (heroTabHit(x, y)) { heroPickMode = true; heroPage = heroIndex / 3; invalidate(); return true; }
+                if (heroIndex == 2 && y >= h * 0.11f && y <= h * 0.20f && x >= w * 0.18f && x <= w * 0.39f) {
+                    soraForm = (soraForm + 1) % 3;
+                    for (int i = 0; i < cooldownUntil.length; i++) cooldownUntil[i] = 0L;
+                    Toast.makeText(MainActivity.this, "Sora form: " + (soraForm == 0 ? "Base" : (soraForm == 1 ? "Thunder" : "Torrent")), Toast.LENGTH_SHORT).show();
+                    invalidate(); return true;
+                }''',
+'''                if (heroPickMode) {
+                    float cellW = w * 0.235f, cellH = h * 0.185f, gapX = w * 0.035f, gapY = h * 0.025f;
+                    float leftStart = (w - (3 * cellW + 2 * gapX)) * 0.5f, topStart = h * 0.205f;
+                    int pages = (heroes.length + 8) / 9;
+                    if (y >= h * 0.825f && y <= h * 0.90f) {
+                        if (x < w * 0.34f) heroPage = Math.max(0, heroPage - 1);
+                        else if (x > w * 0.66f) heroPage = Math.min(pages - 1, heroPage + 1);
+                        invalidate(); return true;
+                    }
+                    if (x >= leftStart && x <= w - leftStart && y >= topStart && y <= topStart + 3 * cellH + 2 * gapY) {
+                        int col = Math.min(2, Math.max(0, (int)((x - leftStart) / (cellW + gapX))));
+                        int row = Math.min(2, Math.max(0, (int)((y - topStart) / (cellH + gapY))));
+                        int selectedHero = heroPage * 9 + row * 3 + col;
+                        if (selectedHero < heroes.length) selectHero(selectedHero);
+                    }
+                    return true;
+                }
+                if (heroTabHit(x, y)) { heroPickMode = true; heroPage = heroIndex / 9; invalidate(); return true; }
+                if (heroIndex == 2 && y >= h * 0.11f && y <= h * 0.20f && x >= w * 0.18f && x <= w * 0.39f) {
+                    soraCloudstep = soraCloudstep >= 5 ? 0 : soraCloudstep + 1;
+                    Toast.makeText(MainActivity.this, soraCloudstep >= 5 ? "True Art ready • use Sora ultimate" : "Cloudstep " + soraCloudstep + "/5 • count confirmed hero/summon hits", Toast.LENGTH_SHORT).show();
+                    invalidate(); return true;
+                }''',1)
+
+s = s.replace('''                    if (!"battle_spell".equals(name)) fireButton(name, x, y);''',
+'''                    if (name.startsWith("skill")) beginSkillAim(id, name, x, y);
+                    else if (!"battle_spell".equals(name)) fireButton(name, x, y);''',1)
+
+old_move = '''            if (action == MotionEvent.ACTION_MOVE) {
+                if (joystickDown) {
+                    for (int i = 0; i < event.getPointerCount(); i++) {
+                        if (event.getPointerId(i) == joystickPointer) {
+                            joystickPoint.set(event.getX(i), event.getY(i));
+                            emitJoy("move", joystickPoint.x / w, joystickPoint.y / h);
+                            invalidate(); break;
+                        }
+                    }
+                }
+                return true;
+            }'''
+new_move = '''            if (action == MotionEvent.ACTION_MOVE) {
+                if (joystickDown) {
+                    for (int i = 0; i < event.getPointerCount(); i++) {
+                        if (event.getPointerId(i) == joystickPointer) {
+                            joystickPoint.set(event.getX(i), event.getY(i));
+                            emitJoy("move", joystickPoint.x / w, joystickPoint.y / h);
+                            break;
+                        }
+                    }
+                }
+                for (int i = 0; i < event.getPointerCount(); i++) {
+                    int pointerId = event.getPointerId(i);
+                    String heldName = buttonPointers.get(pointerId);
+                    if (pointerId == aimPointer && heldName != null && heldName.startsWith("skill")) {
+                        aimX = event.getX(i); aimY = event.getY(i);
+                        aimCancelHovered = isAimCancelZone(aimX, aimY);
+                        if (heroIndex == 2 && aimSkill == 2 && soraForm == 0) {
+                            float deltaX = aimX - aimStartX;
+                            soraFormPreview = deltaX < -w * 0.025f ? 1 : (deltaX > w * 0.025f ? 2 : 0);
+                        }
+                        emitGesture(heldName, "move", aimX / w, aimY / h);
+                        invalidate();
+                    }
+                }
+                return true;
+            }'''
+if old_move not in s: raise SystemExit("Move handler not found")
+s=s.replace(old_move,new_move,1)
+
+old_up = '''            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP || action == MotionEvent.ACTION_CANCEL) {
+                if (id == joystickPointer) {
+                    joystickDown = false; emitJoy("up", joyX, joyY); joystickPointer = -1; invalidate(); return true;
+                }
+                String name = buttonPointers.remove(id);
+                Long downAt = buttonDownTimes.remove(id);
+                if ("mic".equals(name)) endMicrophone();
+                else if ("battle_spell".equals(name)) {
+                    long held = downAt == null ? 0L : SystemClock.uptimeMillis() - downAt;
+                    if (held >= 500L) {
+                        spellPickerOpen = true;
+                        invalidate();
+                    } else {
+                        fireButton("battle_spell", x, y);
+                        emitButton("battle_spell", "up", x / w, y / h);
+                    }
+                } else if (name != null) emitButton(name, "up", x, y);
+                invalidate(); return true;
+            }'''
+new_up = '''            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP || action == MotionEvent.ACTION_CANCEL) {
+                if (id == joystickPointer) {
+                    joystickDown = false; emitJoy("up", joyX, joyY); joystickPointer = -1; invalidate(); return true;
+                }
+                String name = buttonPointers.remove(id);
+                Long downAt = buttonDownTimes.remove(id);
+                if (name != null && name.startsWith("skill")) finishSkillAim(id, name, x, y, action == MotionEvent.ACTION_CANCEL);
+                else if ("mic".equals(name)) endMicrophone();
+                else if ("battle_spell".equals(name)) {
+                    long held = downAt == null ? 0L : SystemClock.uptimeMillis() - downAt;
+                    if (held >= 500L) {
+                        spellPickerOpen = true;
+                        invalidate();
+                    } else {
+                        fireButton("battle_spell", x, y);
+                        emitButton("battle_spell", "up", x / w, y / h);
+                    }
+                } else if (name != null) emitButton(name, "up", x, y);
+                invalidate(); return true;
+            }'''
+if old_up not in s: raise SystemExit("Up handler not found")
+s=s.replace(old_up,new_up,1)
+
+aim_methods = '''        private boolean isAimCancelZone(float x, float y) {
+            return Math.abs(x - w * 0.56f) <= unit * 0.052f
+                    && Math.abs(y - h * 0.225f) <= unit * 0.043f;
+        }
+
+        private void drawAimOverlay(Canvas c) {
+            if (aimPointer < 0 || aimSkill < 0) return;
+            p.setStyle(Paint.Style.FILL); p.setShader(null); p.setColor(0xD909151F);
+            c.drawRoundRect(new RectF(w*0.20f, h*0.105f, w*0.80f, h*0.175f), unit*0.012f, unit*0.012f, p);
+            String prompt = heroIndex == 2 && aimSkill == 2 && soraForm == 0
+                    ? "SWIPE LEFT: THUNDER     •     RIGHT: TORRENT"
+                    : "DRAG TO AIM   •   RELEASE TO CAST";
+            text(c, prompt, w*0.50f, h*0.148f, unit*0.019f, 0xFFFFD77A, true, Paint.Align.CENTER);
+            p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(unit*0.004f); p.setColor(0xFFFFD77A);
+            c.drawLine(aimStartX, aimStartY, aimX, aimY, p); c.drawCircle(aimX, aimY, unit*0.018f, p);
+            float cx = w*0.56f, cy = h*0.225f, cr = unit*0.050f;
+            p.setStyle(Paint.Style.FILL); p.setColor(aimCancelHovered ? 0xFFE23E4D : 0xCC401E29); c.drawCircle(cx, cy, cr, p);
+            p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(unit*0.003f); p.setColor(aimCancelHovered ? Color.WHITE : 0xFFFF8791); c.drawCircle(cx, cy, cr, p);
+            p.setStyle(Paint.Style.FILL); text(c, "CANCEL", cx, cy + unit*0.006f, unit*0.017f, Color.WHITE, true, Paint.Align.CENTER);
+            if (heroIndex == 2 && aimSkill == 2 && soraForm == 0 && soraFormPreview != 0) {
+                text(c, soraFormPreview == 1 ? "THUNDER SELECTED" : "TORRENT SELECTED",
+                        w*0.50f, h*0.205f, unit*0.018f, 0xFF86DBFF, true, Paint.Align.CENTER);
+            }
+        }
+
+        private void beginSkillAim(int pointerId, String name, float x, float y) {
+            aimPointer = pointerId; aimSkill = Integer.parseInt(name.substring("skill".length()));
+            aimStartX = aimX = x; aimStartY = aimY = y;
+            aimCancelHovered = false; soraFormPreview = 0;
+            emitGesture(name, "down", x / w, y / h); invalidate();
+        }
+
+        private void finishSkillAim(int pointerId, String name, float x, float y, boolean systemCancelled) {
+            int skill = Integer.parseInt(name.substring("skill".length()));
+            boolean cancel = systemCancelled || (pointerId == aimPointer && (aimCancelHovered || isAimCancelZone(x, y)));
+            if (cancel) {
+                emitGesture(name, "cancel", 0.56f, 0.225f);
+                Toast.makeText(MainActivity.this, "Skill cancelled", Toast.LENGTH_SHORT).show();
+            } else {
+                emitGesture(name, "up", x / w, y / h);
+                long now = SystemClock.uptimeMillis();
+                if (heroIndex == 2 && skill == 2 && soraForm == 0 && soraFormPreview != 0) {
+                    soraForm = soraFormPreview; soraFormUntil = now + 10000L; soraCloudstep = 0;
+                    cooldownUntil[0] = 0L; cooldownUntil[1] = 0L; cooldownUntil[2] = 0L;
+                    Toast.makeText(MainActivity.this, "Sora transformed to " + (soraForm == 1 ? "Thunder" : "Torrent") + " for 10 seconds", Toast.LENGTH_SHORT).show();
+                } else {
+                    cooldownUntil[skill] = now + currentSkillCooldown(skill);
+                    if (heroIndex == 2 && skill == 2 && soraForm != 0 && soraCloudstep >= 5) {
+                        soraCloudstep = 0;
+                        Toast.makeText(MainActivity.this, "True Art used • reset Cloudstep tracker", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+            if (pointerId == aimPointer) { aimPointer = -1; aimSkill = -1; aimCancelHovered = false; soraFormPreview = 0; }
+            invalidate();
+        }
+
+        private void emitGesture(String name, String state, float nx, float ny) {
+            try {
+                JSONObject o = new JSONObject(); o.put("type", "gesture"); o.put("name", name); o.put("state", state);
+                o.put("x", Math.max(0f, Math.min(1f, nx))); o.put("y", Math.max(0f, Math.min(1f, ny))); send(o);
+            } catch (Exception ignored) { }
+        }
+
+'''
+if "private void drawBattleSpellPicker(Canvas c)" not in s: throw new Error("Spell picker insertion marker missing");
+s=s.replace("        private void drawBattleSpellPicker(Canvas c) {",aim_methods+"        private void drawBattleSpellPicker(Canvas c) {",1);
+
+old_skill_names = '''        private String currentSkillName(int skill) {
+            if (heroIndex == 2 && soraForm == 1) return new String[]{"SUNDERING STRIKE — THUNDERFLASH", "WINDSTRIDE — THUNDER RUSH", "HEAVEN'S WRATH"}[skill];
+            if (heroIndex == 2 && soraForm == 2) return new String[]{"SUNDERING STRIKE — OVERWHELM", "WINDSTRIDE — SKYFALL", "STORMBIND"}[skill];
+            return skillNames[heroIndex][skill];
+        }'''
+new_skill_names = '''        private String currentSkillName(int skill) {
+            if (heroIndex == 2 && skill == 2 && soraCloudstep >= 5 && soraForm != 0) return soraForm == 1 ? "THUNDER TRUE ART" : "TORRENT TRUE ART";
+            if (heroIndex == 2 && soraForm == 1) return new String[]{"SUNDERING STRIKE • THUNDER", "WINDSTRIDE • THUNDER", "SHIFTING SKIES • THUNDER"}[skill];
+            if (heroIndex == 2 && soraForm == 2) return new String[]{"SUNDERING STRIKE • TORRENT", "WINDSTRIDE • TORRENT", "SHIFTING SKIES • TORRENT"}[skill];
+            return skillNames[heroIndex][skill];
+        }'''
+if old_skill_names in s: s=s.replace(old_skill_names,new_skill_names,1)
+
 phone.write_text(s)
 
 # The dashboard API must be reachable through the Waydroid host gateway.
