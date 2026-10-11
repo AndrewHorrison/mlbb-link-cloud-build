@@ -594,7 +594,7 @@ old_click='''            sender.setHost(target);
             controller.setTargetSet(true);
             linkStatus.setText("TARGET SET");
             linkStatus.setTextColor(0xFFB9F5CB);
-            Toast.makeText(MainActivity.this, "Target set to " + target + ":" + PHONE_PORT, Toast.LENGTH_SHORT).show();'''
+            Toast.makeText(this, "Target set to " + target + ":" + PHONE_PORT, Toast.LENGTH_SHORT).show();'''
 new_click='''            sender.setHost(target);
             sender.start();
             getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString("host", target).apply();
