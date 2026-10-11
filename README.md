@@ -1,12 +1,12 @@
-# MLBB Link (0.4.0)
+# MLBB Link (0.5.0)
 
 A personal fan-made local-network controller prototype for Android and Waydroid.
 
 ## What's included
 
-- **Phone Controller** — full-screen landscape HUD with joystick, attack, Recall, Regen, Flicker, cooldown overlays, skill-up controls, saved PC IP and push-to-talk microphone. The latest HUD removes the extra app branding and large developer-style labels.
+- **Phone Controller** — full-screen landscape HUD with a launch-time hero picker, real skill-art icons, 12 selectable battle spells with icons/base cooldown estimates, skill-up controls, cooldown overlays, saved PC IP and push-to-talk microphone. Long-press the battle-spell button to change spell; tap a hero badge to reopen hero selection.
 - **Hero skill artwork** — the build bundles the actual skill icons for Nana, Dyrroth and Sora rather than generic vector glyphs. The hero skill names now match the selected hero.
-- **PC host** — LAN dashboard with a visible/copyable PC IP, incoming packet counters and microphone status.
+- **PC host** — robust Wi-Fi/Ethernet IPv4 detection with dynamic retries, a visible/copyable PC IP, live phone connected/disconnected state based on heartbeats, selected hero, packet counters, and microphone status.
 - **Waydroid Touch Bridge** — the app uses Android network-state access, probes the detected Waydroid gateway plus common fallback addresses, and keeps a manual IP fallback, plus a shortcut to Android Accessibility settings.
 - **Automatic Android builds** — GitHub Actions builds the phone and bridge APKs and uploads an artifact together with the updated source archive and patched PC host script.
 
@@ -50,4 +50,11 @@ Artifacts are retained for 7 days by GitHub Actions.
 5. Enter that LAN IP in the phone controller and tap **LINK**. Both the phone and PC must be on the same local network.
 6. For push-to-talk, grant microphone permission on the phone and press/hold the microphone control.
 
-The Touch Bridge app displays the detected PC IP; the phone controller still sends its UDP controls directly to that IP. The bridge only needs its Accessibility Service enabled to dispatch touches received from the PC host.
+The Touch Bridge app displays the detected PC IP; the phone controller checks the PC dashboard over HTTP and sends UDP heartbeats and controls to the host. The bridge only needs its Accessibility Service enabled to dispatch touches received from the PC host.
+
+
+## Connection and cooldown behavior
+
+The PC dashboard reports PHONE CONNECTED only while phone heartbeats are arriving, and PHONE DISCONNECTED after heartbeats stop. The phone's LINK status probes the PC dashboard rather than treating a typed IP as a successful connection.
+
+Battle spell cooldowns use current base estimates. Skill cooldowns are local estimates too; game patches, talents, and match rules can change them. The controller cannot read internal live MLBB game state, so countdown rings are not guaranteed to match actual in-match readiness.

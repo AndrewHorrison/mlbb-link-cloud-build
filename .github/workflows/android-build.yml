@@ -72,6 +72,18 @@ jobs:
           file "$assets"/*.webp
           test "$(find "$assets" -maxdepth 1 -name '*.webp' | wc -l)" -eq 9
 
+      - name: Bundle authentic battle-spell artwork
+        run: |
+          set -euo pipefail
+          assets="source/mlbb-link/phone-controller/app/src/main/res/drawable-nodpi"
+          mkdir -p "$assets"
+          base="https://mlbb.mezes.uz/img/spells"
+          for spell in flicker retribution purify sprint execute petrify inspire aegis vengeance flameshot arrival revitalize; do
+            curl -fL --retry 5 --retry-all-errors "$base/$spell-100.webp" -o "$assets/spell_$spell.webp"
+          done
+          file "$assets"/spell_*.webp
+          test "$(find "$assets" -maxdepth 1 -name 'spell_*.webp' | wc -l)" -eq 12
+
       - name: Ensure microphone permission is declared
         run: |
           python3 - <<'PYCODE'
