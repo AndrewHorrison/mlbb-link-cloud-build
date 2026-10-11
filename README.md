@@ -1,5 +1,14 @@
 # MLBB Link (0.10.0 Beta)
 
+## v0.11.0 Beta — PC connection center and versioned updates
+
+- Adds dedicated **Overview, Wi-Fi, USB, Bluetooth Beta, Dual Connection, and Updates** tabs to the PC host dashboard, with live transport status and copyable setup commands.
+- The dashboard detects a newer PC host version through `updates/latest.json` and links to the matching host script release asset. Stop and restart the Python host after replacing its script.
+- Releases now include the PC host script and an updated-source archive alongside the phone controller and Waydroid bridge APKs.
+- Both Android apps use versionCode 13 / versionName 0.11.0 with the retained beta signing key so compatible installs can update in place.
+- **Important:** the tabs are diagnostics/setup guides; select Wi-Fi, USB, BT BETA or DUAL in the phone controller. DUAL is documented as USB-preferred with Wi-Fi fallback, but unplug latency and Bluetooth require real-device testing.
+
+
 A personal fan-made local-network controller for Android and Waydroid Mobile Legends: Bang Bang. Experimental input bridge; not affiliated with Moonton.
 
 ## v0.10.0 Beta improvements
