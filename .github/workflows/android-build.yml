@@ -119,6 +119,28 @@ jobs:
               rm -f "$tmp" "$target"; echo "Portrait unavailable for $hero; initials fallback will be used"
             fi
           done
+      - name: Bundle Sora form-specific skill icons
+        run: |
+          set -euo pipefail
+          assets="source/mlbb-link/phone-controller/app/src/main/res/drawable-nodpi"
+          base="https://mlbb.mezes.uz/img/skills"
+          declare -A variants=(
+            [sora_thunder_1]="sora__skill1-thunderflash-100.webp"
+            [sora_thunder_2]="sora__skill2-thunder-rush-100.webp"
+            [sora_thunder_3]="sora__ultimate-heavens-wrath-100.webp"
+            [sora_torrent_1]="sora__skill1-overwhelm-100.webp"
+            [sora_torrent_2]="sora__skill2-skyfall-100.webp"
+            [sora_torrent_3]="sora__ultimate-stormbind-100.webp"
+          )
+          for key in "${!variants[@]}"; do
+            target="$assets/$key.webp"; tmp="$target.tmp"
+            if curl -fLsS --retry 2 --connect-timeout 10 "$base/${variants[$key]}" -o "$tmp"; then
+              mv "$tmp" "$target"; echo "Downloaded Sora variant icon $key"
+            else
+              rm -f "$tmp" "$target"; echo "Optional Sora variant icon unavailable: $key"
+            fi
+          done
+
       - name: Bundle authentic battle-spell artwork
         run: |
           set -euo pipefail
