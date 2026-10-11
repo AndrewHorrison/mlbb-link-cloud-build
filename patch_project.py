@@ -1032,7 +1032,8 @@ s=s.replace('''                {5000, 8000, 24000}
 s=s.replace('private final int[] heroColors = {0xFF51C9E8, 0xFFB14DFF, 0xFFFFA24A};', 'private final int[] heroColors = {0xFF51C9E8, 0xFFB14DFF, 0xFFFFA24A, 0xFF78C8FF, 0xFFFFC85C, 0xFF7D7CF5, 0xFF7CE6C0, 0xFFBA8CFF, 0xFF8EDCFF};', 1)
 s=s.replace('private final Bitmap[][] skillArt = new Bitmap[3][3];', 'private final Bitmap[][] skillArt = new Bitmap[9][3];
         private final Bitmap[] heroPortraits = new Bitmap[9];', 1)
-s=s.replace('String[] keys = {"nana", "dyrroth", "sora"};', 'String[] keys = {"nana", "dyrroth", "sora", "miya", "layla", "alucard", "tigreal", "gusion", "fanny"};', 1)
+s=s.replace('String[] keys = {"nana", "dyrroth", "sora"};', 'String[] keys = {"nana", "dyrroth", "sora", "miya", "layla", "alucard", "tigreal", "gusion", "fanny"};
+            for (int hero = 0; hero < keys.length; hero++) { int id = getResources().getIdentifier("hero_" + keys[hero], "drawable", getContext().getPackageName()); if (id != 0) { try { heroPortraits[hero] = BitmapFactory.decodeResource(getResources(), id); } catch (RuntimeException ignored) { } } }', 1)
 
 s=s.replace('''            float[] lefts = {0.035f, 0.355f, 0.675f};
             for (int hero = 0; hero < heroes.length; hero++) {
@@ -1103,7 +1104,7 @@ s=s.replace('''            heroIndex = index;
 s=s.replace('long total = cooldowns[heroIndex][skill];','long total = currentSkillCooldown(skill);',1)
 s=s.replace('text(c, skillNames[heroIndex][skill], x, y + r * 1.27f,','text(c, currentSkillName(skill), x, y + r * 1.27f,',1)
 s=s.replace('if (cooldownUntil[skill] <= now) cooldownUntil[skill] = now + cooldowns[heroIndex][skill];','if (cooldownUntil[skill] <= now) cooldownUntil[skill] = now + currentSkillCooldown(skill);',1)
-s=s.replace("        private void drawSkillButton(Canvas c,", "        private String currentSkillName(int skill) {\n            if (heroIndex == 2 && soraForm == 1) return new String[]{\"ASSASSIN • SHADOW CUT\", \"ASSASSIN • STORM DASH\", \"ASSASSIN • SKY EXECUTION\"}[skill];\n            if (heroIndex == 2 && soraForm == 2) return new String[]{\"TANK • THUNDER GUARD\", \"TANK • STORM BASTION\", \"TANK • HEAVEN AEGIS\"}[skill];\n            return skillNames[heroIndex][skill];\n        }\n        private long currentSkillCooldown(int skill) {\n            if (heroIndex == 2 && soraForm == 1) return new long[]{6500, 9000, 28000}[skill];\n            if (heroIndex == 2 && soraForm == 2) return new long[]{8000, 11000, 32000}[skill];\n            return cooldowns[heroIndex][skill];\n        }\n        private void drawSkillButton(Canvas c,", 1)
+s=s.replace("        private void drawSkillButton(Canvas c,", "        private String currentSkillName(int skill) {\n            if (heroIndex == 2 && soraForm == 1) return new String[]{\"SUNDERING STRIKE — THUNDERFLASH\", \"WINDSTRIDE — THUNDER RUSH\", \"HEAVEN'S WRATH\"}[skill];\n            if (heroIndex == 2 && soraForm == 2) return new String[]{\"SUNDERING STRIKE — OVERWHELM\", \"WINDSTRIDE — SKYFALL\", \"STORMBIND\"}[skill];\n            return skillNames[heroIndex][skill];\n        }\n        private long currentSkillCooldown(int skill) {\n            if (heroIndex == 2 && soraForm == 1) return new long[]{6500, 9000, 28000}[skill];\n            if (heroIndex == 2 && soraForm == 2) return new long[]{8000, 11000, 32000}[skill];\n            return cooldowns[heroIndex][skill];\n        }\n        private void drawSkillButton(Canvas c,", 1)
 s=s.replace("private boolean heroPickMode = true;", "private int heroPage = 0;\n        private int soraForm = 0;\n        private boolean heroPickMode = true;", 1)
 
 phone.write_text(s)
