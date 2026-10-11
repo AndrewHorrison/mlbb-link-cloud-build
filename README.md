@@ -1,51 +1,49 @@
-# MLBB Link (0.12.0 Beta)
+# MLBB Link v0.13.0
 
-## v0.12.0 Beta — in-app updater and PC connection center
+A community controller for Mobile Legends: Bang Bang using an Android phone controller, a Python PC host, and the Waydroid touch bridge.
 
-- The Android controller now downloads the APK inside MLBB Link with a progress display, validates the published SHA-256 checksum, and opens Android's native install confirmation. It does not open a browser for the APK download.
-- Android may require enabling **Allow from this source** for MLBB Link once. Installation still needs user approval; ordinary Android apps cannot silently replace themselves.
-- The public update manifest includes APK checksums so the downloaded controller APK can be verified before installation.
-- Adds dedicated **Overview, Wi-Fi, USB, Bluetooth Beta, Dual Connection, and Updates** tabs to the PC host dashboard, with live transport status and copyable setup commands.
-- The dashboard detects a newer PC host version through `updates/latest.json` and links to the matching host script release asset. Stop and restart the Python host after replacing its script.
-- Releases now include the PC host script and an updated-source archive alongside the phone controller and Waydroid bridge APKs.
-- Both Android apps use versionCode 13 / versionName 0.11.0 with the retained beta signing key so compatible installs can update in place.
-- **Important:** the tabs are diagnostics/setup guides; select Wi-Fi, USB, BT BETA or DUAL in the phone controller. DUAL is documented as USB-preferred with Wi-Fi fallback, but unplug latency and Bluetooth require real-device testing.
+## v0.13.0 — skill input fix, lower latency, refreshed HUD
 
+- **Skill taps:** quick taps now use a normal tap event; the app starts a continuous aim stroke only after your finger intentionally moves. This targets the issue where Skill 1 and Skill 2 could fail while Ultimate worked.
+- **Lower input latency:** the Android sender caches the PC IP resolution and coalesces old joystick/aim movement samples instead of letting a slow queue build up.
+- **HUD refresh:** added a semi-transparent minimap panel and larger skill hit areas, inspired by the custom HUD discussion linked in the issue.
+- **Visible version:** launcher label and controller HUD show **MLBB Link v0.13.0**.
+- The in-app updater keeps its progress display and SHA-256 verification before handing the APK to Android's installer.
+- PC dashboard includes Overview, Wi-Fi, USB, Bluetooth Beta, Dual Connection, and Updates tabs.
+- Current app version: **versionName 0.13.0 / versionCode 15**.
 
-A personal fan-made local-network controller for Android and Waydroid Mobile Legends: Bang Bang. Experimental input bridge; not affiliated with Moonton.
+## Important first upgrade note
 
-## v0.10.0 Beta improvements
-- **133 selectable hero entries** with **399 bundled skill icon resources** (three per hero). The build prefers public Moonton game data and artwork; if a slot cannot be fetched, it creates a legible hero-specific fallback icon.
-- Loads official skill names and skill descriptions where the game data source returns them, and displays the current skill name/description while aiming.
-- Adds six separate Sora form visual variants: three Thunder and three Torrent icons.
-- PC host version is bumped to 0.10.0 and keeps retrying `adb reverse tcp:28744 tcp:28744`, so USB can become available when you plug in or authorize the phone after starting the host.
-- Refines host LAN IP detection and TCP acknowledgement handling.
-- Both Android apps use versionCode 12 / versionName 0.10.0. The workflow reuses the beta signing key for future in-place updates, and checks all 399 skill icons, skill metadata, and six Sora form icons before compilation.
-- GitHub Actions build and source/resource checks passed on [run 38134270885](https://github.com/augustinejacyandrew-lgtm/mlbb-link-cloud-build/actions/runs/38134270885).
+The private signing key that produced the v0.12.0 APK was not present in the repository or build artifacts, so v0.13.0 establishes a new private signing key stored in the repository-scoped GitHub Actions cache. **Android may reject installing v0.13.0 over v0.12.0.** If it does, save your PC IP first, uninstall the old controller and bridge, then install the v0.13.0 APKs. Uninstalling removes their local settings. The build workflow is configured to reuse the new key for future versions; never publish that key as a release asset.
 
-## Connection setup
+Android still requires user approval for APK installation; this app cannot silently install its own update.
 
-**Wi-Fi:** Start the PC host, read the LAN IP from its dashboard, enter it in the phone app, and press Link.
+## Install and connect
 
-**USB:** Enable Android USB debugging, plug the phone into the Bazzite PC, accept the debugging authorization prompt, and keep the host script running. The host retries `adb reverse tcp:28744 tcp:28744`. Choose USB on the phone.
+1. Download the phone controller and Waydroid bridge APKs from the [latest release](https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/tag/mlbb-link-beta).
+2. Run `python3 mlbb_link_host.py` on Bazzite, preferably directly on the host rather than in Distrobox/Toolbx.
+3. Install and enable the Touch Bridge accessibility service in Waydroid.
+4. Put the PC and phone on the same trusted Wi-Fi, enter the PC LAN IPv4 address into the controller, and tap **LINK**.
+5. Test in Practice Mode first. If the new controller or bridge won't install over the old one, follow the first-upgrade note above.
 
-**Dual Connection:** Choose DUAL. It prefers USB/TCP; when USB sends fail, events fall back to Wi-Fi/UDP. Set the Wi-Fi IP first. The build verifies the host and controller code, but actual unplug/reconnect timing still needs testing on the specific phone/PC.
+### Connection modes
 
-**Bluetooth Beta:** Pair the phone and Bazzite PC first. Select BT BETA and choose the paired PC. Bluetooth SPP remains experimental and is not recommended for competitive matches.
+- **Wi-Fi:** normal LAN input over UDP.
+- **USB:** requires Android USB debugging, platform-tools/ADB authorization, and host-side ADB reverse support.
+- **DUAL:** intended to prefer USB with Wi-Fi fallback. Real cable-unplug behavior can still cause a short interruption.
+- **Bluetooth Beta:** experimental RFCOMM/SPP path; test carefully.
 
-## PC host
+## Limits
 
-Run `python3 mlbb_link_host.py` on Bazzite. Install the Touch Bridge APK in Waydroid and enable its Accessibility service, then launch Mobile Legends.
+- This build is CI-compiled but still needs physical-device testing. I can't verify the skill fix against your particular device/game layout from CI alone.
+- Button placements can differ from your in-game custom HUD. The controller includes larger touch targets and a stylized minimap, but it is not an exact copy of an MLBB game screen and does not read the live match state.
+- Cooldowns, hero state, and Sora form helpers are estimates, not authoritative game telemetry.
+- Independent community project, not affiliated with or endorsed by Moonton.
 
-## Known limits
+## Links
 
-- CI verified compilation and checked all 133 metadata entries, 399 skill icons and six Sora form icons. The app has not been physically tested with every hero or on every device.
-- Some skill icons may be generated fallbacks where upstream image URLs are unavailable. Official descriptions can also be absent for some entries.
-- Cooldowns are not read from live match state. Enemy positions, match state and Sora's actual live transformation are not detected. Treat any local cooldown/form display as a helper, not authoritative game telemetry.
-- The update checker is included, but this repository and its raw update manifest are private. Automatic updates may not be accessible to anonymous users. Android also requires the user to approve APK installation.
-
-## Downloads
-
-- [Latest MLBB Link Beta release](https://github.com/augustinejacyandrew-lgtm/mlbb-link-cloud-build/releases/tag/mlbb-link-beta)
-- [Successful v0.10.0 build](https://github.com/augustinejacyandrew-lgtm/mlbb-link-cloud-build/actions/runs/38134270885)
+- [Download MLBB Link v0.13.0](https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/tag/mlbb-link-beta)
+- [Phone Controller APK](https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/mlbb-link-beta/MLBB-Link-Phone-Controller.apk)
+- [Waydroid Touch Bridge APK](https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/mlbb-link-beta/MLBB-Link-Touch-Bridge.apk)
+- [Build workflow](https://github.com/AndrewHorrison/mlbb-link-cloud-build/actions/workflows/android-build.yml)
 - Update manifest: `updates/latest.json`
