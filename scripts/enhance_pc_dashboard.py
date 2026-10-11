@@ -54,7 +54,7 @@ def main():
     end = host.find("\nrefreshNow();", start)
     if start < 0 or end < 0:
         raise SystemExit("Existing update check function not found")
-    update_js = r'''function compareVersions(a,b){const aa=String(a||'0').split('.').map(v=>parseInt(v,10)||0),bb=String(b||'0').split('.').map(v=>parseInt(v,10)||0);for(let i=0;i<Math.max(aa.length,bb.length);i++){const x=aa[i]||0,y=bb[i]||0;if(x!==y)return x>y?1:-1;}return 0;}
+    update_js = '''function compareVersions(a,b){const aa=String(a||'0').split('.').map(v=>parseInt(v,10)||0),bb=String(b||'0').split('.').map(v=>parseInt(v,10)||0);for(let i=0;i<Math.max(aa.length,bb.length);i++){const x=aa[i]||0,y=bb[i]||0;if(x!==y)return x>y?1:-1;}return 0;}
 function showConnectionTab(name){document.querySelectorAll('.connection-tab').forEach(el=>{const active=el.id==='tab-'+name;el.classList.toggle('active',active);el.setAttribute('aria-selected',active?'true':'false');});document.querySelectorAll('.connection-panel').forEach(el=>el.classList.toggle('active',el.id==='panel-'+name));}
 async function copyText(value,button){const original=button.textContent;try{await navigator.clipboard.writeText(value);}catch(e){const el=document.createElement('textarea');el.value=value;document.body.appendChild(el);el.select();document.execCommand('copy');el.remove();}button.textContent='COPIED ✓';setTimeout(()=>button.textContent=original,1500);}
 async function copyWifiIp(button){const ip=document.getElementById('wifiHostIp').textContent;if(!ip||ip==='LAN IP NOT DETECTED'||ip==='Detecting…'){button.textContent='IP NOT READY';setTimeout(()=>button.textContent='COPY PC IP',1400);return;}await copyText(ip,button);}
