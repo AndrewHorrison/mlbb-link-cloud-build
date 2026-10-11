@@ -83,7 +83,7 @@ def get_skill_records() -> dict[str, list[dict]]:
                     flat.append({
                         "name": str(skill.get("skillname") or ""),
                         "url": str(skill.get("skillicon") or ""),
-                        "description": re.sub(r"\\s+", " ", html_lib.unescape(re.sub(r"<[^>]+>", " ", str(skill.get("skilldesc") or "")))).strip(),
+                        "description": re.sub(r"\s+", " ", html_lib.unescape(re.sub(r"<[^>]+>", " ", str(skill.get("skilldesc") or "")))).strip(),
                         "cooldown": str(skill.get("skillcd&cost") or ""),
                         "group": group_index + 1,
                         "id": str(skill.get("skillid") or ""),
