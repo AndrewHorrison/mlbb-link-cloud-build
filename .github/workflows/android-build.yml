@@ -306,6 +306,28 @@ jobs:
           print("v0.9 source patch applied and basic checks passed")
           PYCODE
 
+      - name: Reuse stable beta signing key for future app updates
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.android" "$RUNNER_TEMP/mlbb-link-key"
+          if gh release view mlbb-link-beta >/dev/null 2>&1; then
+            gh release download mlbb-link-beta --pattern MLBB-Link-Debug.keystore --dir "$RUNNER_TEMP/mlbb-link-key" || true
+          fi
+          if [[ -s "$RUNNER_TEMP/mlbb-link-key/MLBB-Link-Debug.keystore" ]]; then
+            cp "$RUNNER_TEMP/mlbb-link-key/MLBB-Link-Debug.keystore" "$HOME/.android/debug.keystore"
+            cp "$HOME/.android/debug.keystore" "$RUNNER_TEMP/MLBB-Link-Debug.keystore"
+            echo "Reused stable v0.9+ signing key."
+          else
+            keytool -genkeypair -noprompt -v \
+              -keystore "$HOME/.android/debug.keystore" -storepass android \
+              -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 \
+              -validity 10000 -dname "CN=MLBB Link Debug,O=MLBB Link,C=US"
+            cp "$HOME/.android/debug.keystore" "$RUNNER_TEMP/MLBB-Link-Debug.keystore"
+            echo "Created first stable signing key; it will be stored as a private beta release asset."
+          fi
+
       - name: Build Waydroid Touch Bridge APK
         working-directory: source/mlbb-link/waydroid-touch-bridge
         run: |
@@ -337,10 +359,11 @@ jobs:
           set -euo pipefail
           phone="output/MLBB-Link-Phone-Controller.apk"
           bridge="output/MLBB-Link-Touch-Bridge.apk"
+          keystore="$RUNNER_TEMP/MLBB-Link-Debug.keystore"
           if gh release view mlbb-link-beta >/dev/null 2>&1; then
-            gh release upload mlbb-link-beta "$phone" "$bridge" --clobber
+            gh release upload mlbb-link-beta "$phone" "$bridge" "$keystore" --clobber
           else
-            gh release create mlbb-link-beta "$phone" "$bridge" --prerelease --title "MLBB Link Beta" --notes "Rolling prerelease builds. Bluetooth is experimental; test USB/Dual failover in practice mode."
+            gh release create mlbb-link-beta "$phone" "$bridge" "$keystore" --prerelease --title "MLBB Link Beta" --notes "Rolling prerelease builds. Bluetooth is experimental; test USB/Dual failover in practice mode."
           fi
           mkdir -p updates
           python3 - source/mlbb-link/phone-controller/app/build.gradle > updates/latest.json <<'PYCODE'
