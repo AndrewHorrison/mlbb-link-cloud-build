@@ -431,7 +431,7 @@ jobs:
           ## Release assets
           - MLBB-Link-Phone-Controller.apk — Android controller app.
           - MLBB-Link-Touch-Bridge.apk — Android / Waydroid touch bridge.
-          - MLBB-Link-Debug.keystore — retained beta signing key for compatible in-place beta updates; keep private and do not redistribute publicly.
+          - The beta signing key is kept by the build workflow and is not published as a release asset.
           - mlbb_link_host.py — Python PC host/dashboard.
           - MLBB-Link-Updated-Source.tar.gz — updated project source.
 
@@ -467,9 +467,9 @@ jobs:
           test -s "$host"
           test -s "$source_bundle"
           if gh release view mlbb-link-beta >/dev/null 2>&1; then
-            gh release upload mlbb-link-beta "$phone" "$bridge" "$keystore" "$host" "$source_bundle" --clobber
+            gh release upload mlbb-link-beta "$phone" "$bridge" "$host" "$source_bundle" --clobber
           else
-            gh release create mlbb-link-beta "$phone" "$bridge" "$keystore" "$host" "$source_bundle" --prerelease --title "MLBB Link v0.11.0 Beta" --notes-file output/RELEASE_NOTES.md
+            gh release create mlbb-link-beta "$phone" "$bridge" "$host" "$source_bundle" --prerelease --title "MLBB Link v0.11.0 Beta" --notes-file output/RELEASE_NOTES.md
           fi
           mkdir -p updates
           python3 - source/mlbb-link/phone-controller/app/build.gradle source/mlbb-link/host/mlbb_link_host.py > updates/latest.json <<'PYCODE'
