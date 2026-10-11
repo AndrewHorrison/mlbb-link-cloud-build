@@ -10,7 +10,7 @@ on:
       - 'overrides/bridge/MainActivity.java'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -130,27 +130,86 @@ jobs:
               rm -f "$tmp" "$target"; echo "Portrait unavailable for $hero; initials fallback will be used"
             fi
           done
-      - name: Bundle Sora form-specific skill icons
+      - name: Complete and normalize all hero portraits
         run: |
           set -euo pipefail
           assets="source/mlbb-link/phone-controller/app/src/main/res/drawable-nodpi"
-          base="https://mlbb.mezes.uz/img/skills"
-          declare -A variants=(
-            [sora_thunder_1]="sora__skill1-thunderflash-100.webp"
-            [sora_thunder_2]="sora__skill2-thunder-rush-100.webp"
-            [sora_thunder_3]="sora__ultimate-heavens-wrath-100.webp"
-            [sora_torrent_1]="sora__skill1-overwhelm-100.webp"
-            [sora_torrent_2]="sora__skill2-skyfall-100.webp"
-            [sora_torrent_3]="sora__ultimate-stormbind-100.webp"
-          )
-          for key in "${!variants[@]}"; do
-            target="$assets/$key.webp"; tmp="$target.tmp"
-            if curl -fLsS --retry 2 --connect-timeout 10 "$base/${variants[$key]}" -o "$tmp"; then
-              mv "$tmp" "$target"; echo "Downloaded Sora variant icon $key"
-            else
-              rm -f "$tmp" "$target"; echo "Optional Sora variant icon unavailable: $key"
-            fi
-          done
+          mkdir -p "$assets"
+          python3 -m pip install --quiet Pillow
+          curl -fLsS --retry 3 "https://raw.githubusercontent.com/Ceplin03/database-mlbb.Mobile-Legends-Bang-Bang/main/hero.json" -o "$RUNNER_TEMP/mlbb-heroes.json"
+          python3 - "$assets" "$RUNNER_TEMP/mlbb-heroes.json" <<'PYCODE'
+          import concurrent.futures, json, re, sys, urllib.request
+          from pathlib import Path
+          from io import BytesIO
+          from PIL import Image, ImageOps, ImageDraw
+          out=Path(sys.argv[1]); rows=json.loads(Path(sys.argv[2]).read_text())
+          special={"Chang'e":"change","Popol and Kupa":"popol_and_kupa","X.Borg":"x_borg","Yi Sun-shin":"yi_sun_shin","Lapu-Lapu":"lapu_lapu","Luo Yi":"luo_yi"}
+          def key(name): return special.get(name,re.sub(r"[^a-z0-9]+","_",name.lower()).strip("_"))
+          def dl(row):
+              name=row.get("name_hero",""); image=row.get("images-hero","")
+              k=key(name); target=out/f"hero_{k}.webp"
+              if target.exists() or any((out/f"hero_{k}.{ext}").exists() for ext in ("png","jpg","jpeg")): return "exists "+name
+              if not image: return "no image "+name
+              url="https://raw.githubusercontent.com/Ceplin03/database-mlbb.Mobile-Legends-Bang-Bang/main/images-hero/"+image.replace(" ","%20")
+              try:
+                  req=urllib.request.Request(url,headers={"User-Agent":"MLBB-Link-build"})
+                  raw=urllib.request.urlopen(req,timeout=12).read()
+                  im=Image.open(BytesIO(raw)).convert("RGB")
+                  # Center-crop portrait image to square and resize for lightweight icon assets.
+                  im=ImageOps.fit(im,(256,256),method=Image.Resampling.LANCZOS,centering=(0.5,0.45))
+                  im.save(target,"WEBP",quality=88,method=6)
+                  return "ok "+name
+              except Exception as e: return "fallback "+name+": "+str(e)
+          with concurrent.futures.ThreadPoolExecutor(max_workers=10) as ex:
+              for result in ex.map(dl,rows): print(result)
+          # Crop existing Sora banner around the character on its right-hand side.
+          for src in (out/"hero_sora.webp",out/"hero_sora.png"):
+              if src.exists():
+                  try:
+                      im=Image.open(src).convert("RGB")
+                      if im.width > im.height*1.25: im=im.crop((int(im.width*0.43),0,im.width,im.height))
+                      im=ImageOps.fit(im,(256,256),method=Image.Resampling.LANCZOS,centering=(0.5,0.48))
+                      im.save(out/"hero_sora.webp","WEBP",quality=90,method=6)
+                      if src.suffix.lower() != ".webp": src.unlink(missing_ok=True)
+                  except Exception as e: print("Sora crop skipped:",e)
+          # No network asset is guaranteed for Hirara/newer roster, app draws an initials fallback.
+          PYCODE
+
+      - name: Generate separate Sora Thunder and Torrent skill icons
+        run: |
+          set -euo pipefail
+          assets="source/mlbb-link/phone-controller/app/src/main/res/drawable-nodpi"
+          python3 -m pip install --quiet Pillow
+          python3 - "$assets" <<'PYCODE'
+          from pathlib import Path
+          from PIL import Image, ImageOps, ImageDraw
+          import sys
+          out=Path(sys.argv[1])
+          for form in ("thunder","torrent"):
+            for i in range(1,4):
+              src=out/f"skill_sora_{i}.webp"
+              if not src.exists():
+                # Always generate a legible icon even if the upstream source artwork is unavailable.
+                im=Image.new("RGB",(128,128),(18,36,54))
+              else:
+                im=Image.open(src).convert("RGB")
+              im=ImageOps.fit(im,(128,128),method=Image.Resampling.LANCZOS)
+              overlay=Image.new("RGBA",(128,128),(0,0,0,0)); d=ImageDraw.Draw(overlay)
+              if form=="thunder":
+                d.ellipse((6,6,122,122),outline=(97,230,255,255),width=5)
+                d.polygon([(70,14),(38,70),(62,70),(49,112),(94,55),(69,55)],fill=(120,238,255,235))
+                tag=(25,120,173,245)
+              else:
+                d.ellipse((6,6,122,122),outline=(113,244,205,255),width=5)
+                for yy in (44,64,84):
+                  d.arc((25,yy-12,108,yy+12),190,350,fill=(105,255,219,255),width=6)
+                tag=(18,132,111,245)
+              d.rounded_rectangle((12,10,70,31),radius=7,fill=tag)
+              d.text((18,13),form.upper(),fill=(255,255,255,255),stroke_width=0)
+              im=Image.alpha_composite(im.convert("RGBA"),overlay).convert("RGB")
+              im.save(out/f"sora_{form}_{i}.webp","WEBP",quality=90,method=6)
+          print("Generated all 6 Sora form skill icons")
+          PYCODE
 
       - name: Bundle authentic battle-spell artwork
         run: |
@@ -217,6 +276,42 @@ jobs:
           cd output
           sha256sum MLBB-Link-Touch-Bridge.apk MLBB-Link-Phone-Controller.apk > SHA256SUMS.txt
           zip -q MLBB-Link-APKs.zip MLBB-Link-Touch-Bridge.apk MLBB-Link-Phone-Controller.apk SHA256SUMS.txt
+
+      - name: Publish rolling beta and refresh update manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          phone="output/MLBB-Link-Phone-Controller.apk"
+          bridge="output/MLBB-Link-Touch-Bridge.apk"
+          if gh release view mlbb-link-beta >/dev/null 2>&1; then
+            gh release upload mlbb-link-beta "$phone" "$bridge" --clobber
+          else
+            gh release create mlbb-link-beta "$phone" "$bridge" --prerelease --title "MLBB Link Beta" --notes "Rolling prerelease builds. Bluetooth is experimental; test USB/Dual failover in practice mode."
+          fi
+          mkdir -p updates
+          python3 - source/mlbb-link/phone-controller/app/build.gradle > updates/latest.json <<'PYCODE'
+          import json,re,sys
+          from pathlib import Path
+          text=Path(sys.argv[1]).read_text()
+          code=re.search(r"versionCode\\s+(\\d+)",text)
+          name=re.search(r"versionName\\s+'([^']+)'",text)
+          if not code or not name: raise SystemExit("Could not read Android app version")
+          print(json.dumps({
+            "versionCode":int(code.group(1)),
+            "versionName":name.group(1),
+            "phoneApkUrl":"https://github.com/augustinejacyandrew-lgtm/mlbb-link-cloud-build/releases/download/mlbb-link-beta/MLBB-Link-Phone-Controller.apk",
+            "bridgeApkUrl":"https://github.com/augustinejacyandrew-lgtm/mlbb-link-cloud-build/releases/download/mlbb-link-beta/MLBB-Link-Touch-Bridge.apk",
+            "releaseUrl":"https://github.com/augustinejacyandrew-lgtm/mlbb-link-cloud-build/releases/tag/mlbb-link-beta"
+          },indent=2))
+          PYCODE
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add updates/latest.json
+          if [[ "$GITHUB_REF_NAME" == "main" ]] && ! git diff --cached --quiet; then
+            git commit -m "chore: refresh beta update manifest [skip ci]"
+            git push origin HEAD:main
+          fi
 
       - name: Upload downloads
         uses: actions/upload-artifact@v5
