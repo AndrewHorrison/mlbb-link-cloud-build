@@ -791,10 +791,14 @@ picker=r'''
         private void drawHeroPicker(Canvas c) {
             p.setStyle(Paint.Style.FILL); p.setColor(0xE80A1218); c.drawRect(0, 0, w, h, p);
             text(c, "CHOOSE HERO", w * 0.50f, h * 0.105f, unit * 0.050f, 0xFFFFD77A, true, Paint.Align.CENTER);
-            float cellW = w * 0.235f, cellH = h * 0.205f, gapX = w * 0.035f, gapY = h * 0.035f;
+            int pages = (heroes.length + 8) / 9;
+            heroPage = Math.max(0, Math.min(heroPage, pages - 1));
+            float cellW = w * 0.235f, cellH = h * 0.185f, gapX = w * 0.035f, gapY = h * 0.025f;
             float leftStart = (w - (3 * cellW + 2 * gapX)) * 0.5f, topStart = h * 0.205f;
-            for (int hero = 0; hero < heroes.length; hero++) {
-                int row = hero / 3, col = hero % 3;
+            for (int slot = 0; slot < 9; slot++) {
+                int hero = heroPage * 9 + slot;
+                if (hero >= heroes.length) continue;
+                int row = slot / 3, col = slot % 3;
                 float left = leftStart + col * (cellW + gapX), top = topStart + row * (cellH + gapY);
                 RectF card = new RectF(left, top, left + cellW, top + cellH);
                 p.setStyle(Paint.Style.FILL); p.setColor(hero == heroIndex ? 0xDD27382F : 0xD5101D25);
@@ -802,7 +806,7 @@ picker=r'''
                 p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(hero == heroIndex ? unit * 0.0038f : unit * 0.0015f);
                 p.setColor(hero == heroIndex ? 0xFFFFD36D : 0xFF536B78); c.drawRoundRect(card, unit * 0.018f, unit * 0.018f, p);
                 p.setStyle(Paint.Style.FILL);
-                float radius = Math.min(cellW * 0.31f, cellH * 0.56f), x = left + cellW * 0.5f, y = top + cellH * 0.43f;
+                float radius = Math.min(cellW * 0.31f, cellH * 0.48f), x = left + cellW * 0.5f, y = top + cellH * 0.42f;
                 Bitmap portrait = heroPortraits[hero];
                 if (portrait != null) {
                     int save = c.save(); Path clip = new Path(); clip.addCircle(x, y, radius, Path.Direction.CW); c.clipPath(clip);
@@ -811,75 +815,55 @@ picker=r'''
                     p.setColor(Color.WHITE); c.drawBitmap(portrait, src, dst, p); c.restoreToCount(save);
                 } else {
                     p.setColor(heroColors[hero]); c.drawCircle(x, y, radius, p);
-                    p.setColor(0xFF14212A); c.drawCircle(x, y, radius * 0.78f, p);
-                    text(c, heroes[hero].substring(0, 1), x, y + radius * 0.34f, radius * 1.05f, Color.WHITE, true, Paint.Align.CENTER);
+                    if (hero == 2) {
+                        p.setColor(0xFFEAF8FF); c.drawCircle(x-radius*0.19f, y-radius*0.08f, radius*0.40f, p);
+                        c.drawCircle(x+radius*0.18f, y-radius*0.18f, radius*0.50f, p);
+                        c.drawCircle(x+radius*0.43f, y+radius*0.03f, radius*0.31f, p);
+                        Path bolt = new Path(); bolt.moveTo(x+radius*0.06f,y-radius*0.05f); bolt.lineTo(x-radius*0.17f,y+radius*0.24f); bolt.lineTo(x+radius*0.03f,y+radius*0.24f); bolt.lineTo(x-radius*0.04f,y+radius*0.53f); bolt.lineTo(x+radius*0.25f,y+radius*0.13f); bolt.lineTo(x+radius*0.09f,y+radius*0.13f); bolt.close();
+                        p.setColor(0xFF2273B9); c.drawPath(bolt, p);
+                    } else {
+                        p.setColor(0xFF14212A); c.drawCircle(x, y, radius * 0.78f, p);
+                        text(c, heroes[hero].substring(0, 1), x, y + radius * 0.34f, radius * 1.05f, Color.WHITE, true, Paint.Align.CENTER);
+                    }
                 }
                 p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(unit * 0.002f);
                 p.setColor(hero == heroIndex ? 0xFFFFD36D : 0xFF8DA2AD); c.drawCircle(x, y, radius, p);
                 p.setStyle(Paint.Style.FILL);
                 String name = heroes[hero].substring(0,1) + heroes[hero].substring(1).toLowerCase(java.util.Locale.ROOT);
-                text(c, name, x, top + cellH * 0.88f, unit * 0.026f, Color.WHITE, true, Paint.Align.CENTER);
+                text(c, name, x, top + cellH * 0.87f, unit * 0.026f, Color.WHITE, true, Paint.Align.CENTER);
             }
-            text(c, "TAP A HERO ICON TO SELECT", w * 0.50f, h * 0.925f, unit * 0.020f, 0xFF9DAFBC, false, Paint.Align.CENTER);
+            text(c, "‹ PREV", w * 0.20f, h * 0.865f, unit * 0.023f, heroPage > 0 ? 0xFFFFD77A : 0xFF60717C, true, Paint.Align.CENTER);
+            text(c, "PAGE " + (heroPage + 1) + " / " + pages, w * 0.50f, h * 0.865f, unit * 0.022f, 0xFFD2DFE8, true, Paint.Align.CENTER);
+            text(c, "NEXT ›", w * 0.80f, h * 0.865f, unit * 0.023f, heroPage < pages - 1 ? 0xFFFFD77A : 0xFF60717C, true, Paint.Align.CENTER);
+            text(c, "TAP A HERO ICON TO SELECT", w * 0.50f, h * 0.945f, unit * 0.018f, 0xFF9DAFBC, false, Paint.Align.CENTER);
         }
 
         private void drawCircularArt(Canvas c, Bitmap art, float x, float y, float r) {
-            p.setStyle(Paint.Style.FILL);
-            p.setShader(null);
-            p.setColor(0xFF172630);
-            c.drawCircle(x, y, r * 1.08f, p);
+            p.setStyle(Paint.Style.FILL); p.setShader(null); p.setColor(0xFF172630); c.drawCircle(x, y, r * 1.08f, p);
             if (art != null) {
-                int save = c.save();
-                Path clip = new Path();
-                clip.addCircle(x, y, r, Path.Direction.CW);
-                c.clipPath(clip);
-                Rect src = new Rect(0, 0, art.getWidth(), art.getHeight());
-                RectF dst = new RectF(x-r, y-r, x+r, y+r);
-                p.setColor(Color.WHITE);
-                c.drawBitmap(art, src, dst, p);
-                c.restoreToCount(save);
+                int save = c.save(); Path clip = new Path(); clip.addCircle(x, y, r, Path.Direction.CW); c.clipPath(clip);
+                Rect src = new Rect(0, 0, art.getWidth(), art.getHeight()); RectF dst = new RectF(x-r, y-r, x+r, y+r);
+                p.setColor(Color.WHITE); c.drawBitmap(art, src, dst, p); c.restoreToCount(save);
             }
-            p.setStyle(Paint.Style.STROKE);
-            p.setStrokeWidth(unit * 0.0025f);
-            p.setColor(0xFFCAD7DF);
-            c.drawCircle(x, y, r, p);
-            p.setStyle(Paint.Style.FILL);
+            p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(unit * 0.0025f); p.setColor(0xFFCAD7DF); c.drawCircle(x, y, r, p); p.setStyle(Paint.Style.FILL);
         }
 
         private void drawBattleSpellPicker(Canvas c) {
-            p.setStyle(Paint.Style.FILL);
-            p.setColor(0xD900060A);
-            c.drawRect(0, 0, w, h, p);
+            p.setStyle(Paint.Style.FILL); p.setColor(0xD900060A); c.drawRect(0, 0, w, h, p);
             RectF panel = new RectF(w * 0.135f, h * 0.155f, w * 0.865f, h * 0.845f);
-            p.setColor(0xF0182733);
-            c.drawRoundRect(panel, unit * 0.025f, unit * 0.025f, p);
-            p.setStyle(Paint.Style.STROKE);
-            p.setStrokeWidth(unit * 0.003f);
-            p.setColor(0xFFE4BF6B);
-            c.drawRoundRect(panel, unit * 0.025f, unit * 0.025f, p);
-            p.setStyle(Paint.Style.FILL);
-            text(c, "CHOOSE BATTLE SPELL", w * 0.50f, h * 0.245f, unit * 0.045f, 0xFFFFD77A, true, Paint.Align.CENTER);
+            p.setColor(0xF0182733); c.drawRoundRect(panel, unit * 0.025f, unit * 0.025f, p);
+            p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(unit * 0.003f); p.setColor(0xFFE4BF6B); c.drawRoundRect(panel, unit * 0.025f, unit * 0.025f, p);
+            p.setStyle(Paint.Style.FILL); text(c, "CHOOSE BATTLE SPELL", w * 0.50f, h * 0.245f, unit * 0.045f, 0xFFFFD77A, true, Paint.Align.CENTER);
             for (int index = 0; index < battleSpells.length; index++) {
-                int col = index % 4, row = index / 4;
-                float x = w * (0.22f + col * 0.187f), y = h * (0.395f + row * 0.155f);
+                int col = index % 4, row = index / 4; float x = w * (0.22f + col * 0.187f), y = h * (0.395f + row * 0.155f);
                 float radius = unit * 0.043f;
-                if (index == battleSpellIndex) {
-                    p.setStyle(Paint.Style.STROKE);
-                    p.setStrokeWidth(unit * 0.0035f);
-                    p.setColor(0xFFFFD36D);
-                    c.drawCircle(x, y, radius * 1.18f, p);
-                    p.setStyle(Paint.Style.FILL);
-                }
+                if (index == battleSpellIndex) { p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(unit * 0.0035f); p.setColor(0xFFFFD36D); c.drawCircle(x, y, radius * 1.18f, p); p.setStyle(Paint.Style.FILL); }
                 drawCircularArt(c, spellArt[index], x, y, radius);
-                text(c, battleSpells[index], x, y + radius * 1.48f, unit * 0.019f,
-                        index == battleSpellIndex ? 0xFFFFD77A : 0xFFE0E8EF, true, Paint.Align.CENTER);
-                text(c, battleSpellCooldowns[index] + "s CD", x, y + radius * 1.93f,
-                        unit * 0.015f, 0xFF9FB0BC, false, Paint.Align.CENTER);
+                text(c, battleSpells[index], x, y + radius * 1.48f, unit * 0.019f, index == battleSpellIndex ? 0xFFFFD77A : 0xFFE0E8EF, true, Paint.Align.CENTER);
+                text(c, battleSpellCooldowns[index] + "s CD", x, y + radius * 1.93f, unit * 0.015f, 0xFF9FB0BC, false, Paint.Align.CENTER);
             }
-            text(c, "TAP A SPELL TO EQUIP IT • COOLDOWNS ARE BASE ESTIMATES",
-                    w * 0.50f, h * 0.812f, unit * 0.019f, 0xFFB5C4CE, false, Paint.Align.CENTER);
+            text(c, "TAP A SPELL TO EQUIP IT • COOLDOWNS ARE BASE ESTIMATES", w * 0.50f, h * 0.812f, unit * 0.019f, 0xFFB5C4CE, false, Paint.Align.CENTER);
         }
-
 '''
 if "private void drawHeroPicker(Canvas c)" not in s:
     s=s.replace("        private void drawTopHud(Canvas c) {",picker+"        private void drawTopHud(Canvas c) {",1)
