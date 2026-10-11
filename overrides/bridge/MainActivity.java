@@ -157,8 +157,8 @@ public class MainActivity extends Activity {
         copy.setOnClickListener(v -> copyIp());
         useManual.setOnClickListener(v -> {
             String value = manualIp.getText().toString().trim();
-            if (!isIpv4(value)) {
-                Toast.makeText(this, "Enter a valid IPv4 address", Toast.LENGTH_SHORT).show();
+            if (!isIpv4(value) || value.startsWith("127.")) {
+                Toast.makeText(this, "Enter the PC LAN IPv4 address, not 127.0.0.1", Toast.LENGTH_SHORT).show();
                 return;
             }
             detectedIp = value;
@@ -173,17 +173,35 @@ public class MainActivity extends Activity {
         gatewayIp = defaultGateway();
         gatewayValue.setText("Waydroid gateway: " + (gatewayIp.isEmpty() ? "not detected" : gatewayIp));
         ipValue.setText("Searching…");
-        statusValue.setText("Connecting to the PC host on port " + DASHBOARD_PORT + "…");
+        statusValue.setText("Checking the Waydroid gateway and common host addresses…");
+        java.util.LinkedHashSet<String> candidateSet = new java.util.LinkedHashSet<>();
+        if (gatewayIp != null && !gatewayIp.isEmpty()) candidateSet.add(gatewayIp);
+        candidateSet.add("192.168.240.1");
+        candidateSet.add("192.168.241.1");
+        candidateSet.add("10.0.2.2");
+        candidateSet.add("10.0.3.2");
+        final java.util.List<String> candidates = new java.util.ArrayList<>(candidateSet);
         worker.execute(() -> {
-            String ip = fetchHostIp(gatewayIp);
+            String ip = null;
+            String via = null;
+            for (String candidate : candidates) {
+                String found = fetchHostIp(candidate);
+                if (found != null && isIpv4(found) && !found.startsWith("127.")) {
+                    ip = found;
+                    via = candidate;
+                    break;
+                }
+            }
+            final String finalIp = ip;
+            final String finalVia = via;
             runOnUiThread(() -> {
-                if (ip != null && isIpv4(ip) && !ip.startsWith("127.")) {
-                    detectedIp = ip;
-                    ipValue.setText(ip);
-                    statusValue.setText("PC found. Use this address in the phone controller.");
-                    if (manualIp != null && manualIp.getText().toString().trim().isEmpty()) manualIp.setText(ip);
+                if (finalIp != null) {
+                    detectedIp = finalIp;
+                    ipValue.setText(finalIp);
+                    statusValue.setText("PC found through " + finalVia + ". Use this IP in the phone controller.");
+                    if (manualIp != null && manualIp.getText().toString().trim().isEmpty()) manualIp.setText(finalIp);
                 } else {
-                    statusValue.setText("PC not found. Start mlbb_link_host.py on the PC and tap FIND PC again, or enter its LAN IP below.");
+                    statusValue.setText("PC dashboard is unreachable. Start mlbb_link_host.py and allow TCP 28740 from Waydroid, or enter the PC LAN IP below.");
                     ipValue.setText("Not found");
                 }
             });
@@ -197,8 +215,8 @@ public class MainActivity extends Activity {
             URL url = new URL("http://" + gateway + ":" + DASHBOARD_PORT + "/api/status");
             conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
-            conn.setConnectTimeout(1800);
-            conn.setReadTimeout(1800);
+            conn.setConnectTimeout(1200);
+            conn.setReadTimeout(1200);
             conn.setUseCaches(false);
             if (conn.getResponseCode() != 200) return null;
             try (InputStream in = conn.getInputStream();
