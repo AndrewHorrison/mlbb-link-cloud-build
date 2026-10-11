@@ -387,7 +387,7 @@ jobs:
           path: ~/.android/debug.keystore
           key: mlbb-link-signing-key-v1
 
-      - name: Reuse stable beta signing key for future app updates
+      - name: Reuse stable signing key for future app updates
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -486,16 +486,26 @@ jobs:
           source_bundle="output/MLBB-Link-Updated-Source.tar.gz"
           test -s "$host"
           test -s "$source_bundle"
-          if gh release view mlbb-link-beta >/dev/null 2>&1; then
-            gh release upload mlbb-link-beta "$phone" "$bridge" "$host" "$source_bundle" --clobber
+          release_tag="$(python3 - source/mlbb-link/phone-controller/app/build.gradle <<'PYTAG'
+          import re,sys
+          from pathlib import Path
+          text=Path(sys.argv[1]).read_text()
+          match=re.search(r"versionName\\s+['\\\"]([^'\\\"]+)['\\\"]",text)
+          if not match: raise SystemExit("Could not read versionName for release tag")
+          print("v"+match.group(1))
+          PYTAG
+          )"
+          release_title="MLBB Link ${release_tag}"
+          if gh release view "${release_tag}" >/dev/null 2>&1; then
+            gh release upload "${release_tag}" "$phone" "$bridge" "$host" "$source_bundle" --clobber
+            gh release edit "${release_tag}" --title "${release_title}" --notes-file output/RELEASE_NOTES.md
           else
-            gh release create mlbb-link-beta "$phone" "$bridge" "$host" "$source_bundle" --title "MLBB Link v0.13.0" --notes-file output/RELEASE_NOTES.md
+            gh release create "${release_tag}" "$phone" "$bridge" "$host" "$source_bundle" --title "${release_title}" --notes-file output/RELEASE_NOTES.md
           fi
-          gh release edit mlbb-link-beta --title "MLBB Link v0.13.0" --notes-file output/RELEASE_NOTES.md
-          release_id="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/mlbb-link-beta" --jq '.id')"
-          # Promote the existing rolling release to a normal public release (not a prerelease).
+          release_id="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${release_tag}" --jq '.id')"
+          # Every version is a normal public release, never a GitHub prerelease.
           gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${release_id}" \
-            -F name="MLBB Link v0.13.0" \
+            -F name="${release_title}" \
             -F prerelease=false \
             -F draft=false \
             -F body="$(cat output/RELEASE_NOTES.md)"
@@ -519,18 +529,21 @@ jobs:
             "hostVersion":host_version.group(1),
             "phoneApkSha256":sha(phone),
             "bridgeApkSha256":sha(bridge),
-            "phoneApkUrl":root+"/releases/download/mlbb-link-beta/MLBB-Link-Phone-Controller.apk",
-            "bridgeApkUrl":root+"/releases/download/mlbb-link-beta/MLBB-Link-Touch-Bridge.apk",
-            "hostScriptUrl":root+"/releases/download/mlbb-link-beta/mlbb_link_host.py",
-            "sourceUrl":root+"/releases/download/mlbb-link-beta/MLBB-Link-Updated-Source.tar.gz",
-            "releaseUrl":root+"/releases/tag/mlbb-link-beta"
+            "phoneApkUrl":root+"/releases/download/v"+name.group(1)+"/MLBB-Link-Phone-Controller.apk",
+            "bridgeApkUrl":root+"/releases/download/v"+name.group(1)+"/MLBB-Link-Touch-Bridge.apk",
+            "hostScriptUrl":root+"/releases/download/v"+name.group(1)+"/mlbb_link_host.py",
+            "sourceUrl":root+"/releases/download/v"+name.group(1)+"/MLBB-Link-Updated-Source.tar.gz",
+            "releaseUrl":root+"/releases/tag/v"+name.group(1)
           },indent=2))
           PYCODE
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add updates/latest.json
           if [[ "$GITHUB_REF_NAME" == "main" ]] && ! git diff --cached --quiet; then
-            git commit -m "chore: refresh beta update manifest [skip ci]"
+            git commit -m "chore: refresh v${release_tag#v} update manifest [skip ci]"
+            # A README or cache-workflow commit may have landed while Android was building.
+            git fetch origin main
+            git rebase origin/main
             git push origin HEAD:main
           fi
 
