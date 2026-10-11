@@ -136,7 +136,7 @@ jobs:
           assets="source/mlbb-link/phone-controller/app/src/main/res/drawable-nodpi"
           mkdir -p "$assets"
           python3 -m pip install --quiet Pillow
-          curl -fLsS --retry 3 "https://raw.githubusercontent.com/Ceplin03/database-mlbb.Mobile-Legends-Bang-Bang/main/hero.json" -o "$RUNNER_TEMP/mlbb-heroes.json"
+          curl -fLsS --retry 3 "https://raw.githubusercontent.com/Ceplin03/database-mlbb.Mobile-Legends-Bang-Bang/master/hero.json" -o "$RUNNER_TEMP/mlbb-heroes.json"
           python3 - "$assets" "$RUNNER_TEMP/mlbb-heroes.json" <<'PYCODE'
           import concurrent.futures, json, re, sys, urllib.request
           from pathlib import Path
@@ -150,7 +150,7 @@ jobs:
               k=key(name); target=out/f"hero_{k}.webp"
               if target.exists() or any((out/f"hero_{k}.{ext}").exists() for ext in ("png","jpg","jpeg")): return "exists "+name
               if not image: return "no image "+name
-              url="https://raw.githubusercontent.com/Ceplin03/database-mlbb.Mobile-Legends-Bang-Bang/main/images-hero/"+image.replace(" ","%20")
+              url="https://raw.githubusercontent.com/Ceplin03/database-mlbb.Mobile-Legends-Bang-Bang/master/images-hero/"+image.replace(" ","%20")
               try:
                   req=urllib.request.Request(url,headers={"User-Agent":"MLBB-Link-build"})
                   raw=urllib.request.urlopen(req,timeout=12).read()
