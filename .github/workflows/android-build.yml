@@ -353,16 +353,21 @@ jobs:
           print(f"Verified {len(heroes)} hero entries, {len(heroes)*3} skill icons, skill details, and all Sora form icons")
           PYCODE
 
-      - name: Add PC connection center and in-app updater for v0.12.0
+      - name: Fix skill tap/aim, reduce latency, and update HUD for v0.13.0
         run: |
           set -euo pipefail
           python3 scripts/enhance_pc_dashboard.py source/mlbb-link
           python3 scripts/enable_in_app_updates.py source/mlbb-link
-          python3 -m py_compile source/mlbb-link/host/mlbb_link_host.py scripts/enhance_pc_dashboard.py scripts/enable_in_app_updates.py
+          python3 scripts/fix_skill_connection_ui.py source/mlbb-link
+          python3 -m py_compile source/mlbb-link/host/mlbb_link_host.py scripts/enhance_pc_dashboard.py scripts/enable_in_app_updates.py scripts/fix_skill_connection_ui.py
           grep -q 'panel-usb' source/mlbb-link/host/mlbb_link_host.py
           grep -q 'panel-bluetooth' source/mlbb-link/host/mlbb_link_host.py
           grep -q 'panel-dual' source/mlbb-link/host/mlbb_link_host.py
           grep -q 'DOWNLOAD IN APP' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
+          grep -q 'aimGestureStarted' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
+          grep -q 'pendingJoystickMove' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
+          grep -q 'drawMiniMap(canvas)' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
+          grep -q 'android:label="MLBB Link v0.13.0"' source/mlbb-link/phone-controller/app/src/main/AndroidManifest.xml
           grep -q 'FileProvider' source/mlbb-link/phone-controller/app/src/main/AndroidManifest.xml
           test -s source/mlbb-link/phone-controller/app/src/main/res/xml/file_paths.xml
           python3 - <<'PYCODE'
@@ -376,6 +381,12 @@ jobs:
           PYCODE
           node --check "$RUNNER_TEMP/mlbb-link-dashboard.js"
 
+      - name: Restore private signing key from repository-scoped cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: mlbb-link-signing-key-v1
+
       - name: Reuse stable beta signing key for future app updates
         env:
           GH_TOKEN: ${{ github.token }}
@@ -388,14 +399,17 @@ jobs:
           if [[ -s "$RUNNER_TEMP/mlbb-link-key/MLBB-Link-Debug.keystore" ]]; then
             cp "$RUNNER_TEMP/mlbb-link-key/MLBB-Link-Debug.keystore" "$HOME/.android/debug.keystore"
             cp "$HOME/.android/debug.keystore" "$RUNNER_TEMP/MLBB-Link-Debug.keystore"
-            echo "Reused stable v0.9+ signing key."
+            echo "Reused the existing release signing key."
+          elif [[ -s "$HOME/.android/debug.keystore" ]]; then
+            cp "$HOME/.android/debug.keystore" "$RUNNER_TEMP/MLBB-Link-Debug.keystore"
+            echo "Reused the private Actions-cache signing key."
           else
             keytool -genkeypair -noprompt -v \
               -keystore "$HOME/.android/debug.keystore" -storepass android \
               -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 \
               -validity 10000 -dname "CN=MLBB Link Debug,O=MLBB Link,C=US"
             cp "$HOME/.android/debug.keystore" "$RUNNER_TEMP/MLBB-Link-Debug.keystore"
-            echo "Created first stable signing key; it will be stored as a private beta release asset."
+            echo "Generated the first cached signing key. Older v0.12.0 installs may need to be uninstalled before this build can install."
           fi
 
       - name: Build Waydroid Touch Bridge APK
@@ -418,34 +432,34 @@ jobs:
           cp source/mlbb-link/phone-controller/app/build/outputs/apk/debug/app-debug.apk output/MLBB-Link-Phone-Controller.apk
           cp source/mlbb-link/host/mlbb_link_host.py output/mlbb_link_host.py
           cat > output/RELEASE_NOTES.md <<'NOTES'
-          # MLBB Link v0.12.0
+          # MLBB Link v0.13.0
 
           A community release for connecting an Android controller to the MLBB Link host on a PC / Waydroid setup. This release adds an in-app Android updater.
 
           ## What's new
-          - PC dashboard connection center with Overview, Wi-Fi, USB, Bluetooth Beta, Dual Connection, and Updates tabs.
+          - In-game-inspired HUD with a translucent minimap and larger skill buttons, inspired by community custom-layout preferences.
           - Wi-Fi instructions show the PC LAN address and UDP controller port (28741), with copy-IP support.
-          - USB troubleshooting for Android USB debugging, ADB authorization, and ADB reverse.
+          - Skill taps are now sent as ordinary taps; a drag starts an aiming gesture only after the finger moves past a small threshold.
           - Bluetooth Beta pairing and RFCOMM setup guidance. Bluetooth is experimental and may not work on every device.
-          - Dual Connection setup guide: intended USB-preferred operation with Wi-Fi fallback when the phone sender detects a USB transport failure.
-          - In-app updater checks the public version manifest, downloads the controller APK within MLBB Link with progress, validates the SHA-256 digest, and opens Android's native installer.
+          - Low-latency sender coalesces old joystick/aim movement samples and resolves the PC IP once instead of for every packet.
+          - App launcher name and HUD identify the version as MLBB Link v0.13.0.
           - No browser page is opened for the APK download. Android still requires user approval; if needed, MLBB Link opens Android's per-app install permission settings.
-          - Versioned manifest includes SHA-256 hashes for the controller and bridge APKs, plus version information for the PC host.
+          - In-app updater still downloads the APK inside MLBB Link with progress, verifies SHA-256, then opens Android's native installer.
           - PC host script and updated source bundle are included as release assets.
-          - Android versionName 0.12.0 / versionCode 14.
+          - Android versionName 0.13.0 / versionCode 15.
 
           ## Release assets
           - MLBB-Link-Phone-Controller.apk — Android controller app.
           - MLBB-Link-Touch-Bridge.apk — Android / Waydroid touch bridge.
-          - The beta signing key is kept by the build workflow and is not published as a release asset.
+          - Signing key is kept in a repository-scoped Actions cache, never published as a release asset.
           - mlbb_link_host.py — Python PC host/dashboard.
           - MLBB-Link-Updated-Source.tar.gz — updated project source.
 
           ## Upgrade notes
-          Back up your existing setup before testing. Android updates require the same package ID and signing key. MLBB Link downloads the APK inside the app, verifies its hash, then hands it to Android's native installer for approval. Stop the PC host before replacing its Python script, then restart it.
+          Important first-upgrade note: the private signing key that produced the previous v0.12.0 APK was not present in the repository or build artifacts, so this first v0.13.0 APK uses a new private key which the workflow now caches for future releases. Android may reject installing v0.13.0 over v0.12.0. If that happens, save your PC IP, uninstall v0.12.0, then install v0.13.0. This removes the old app's local settings. Future builds should reuse the cached v0.13.0 signing key. Android still requires approval to install updates. Stop and restart the PC host after replacing its Python script.
 
           ## Known limitations
-          - Bluetooth and Dual Connection failover require real-device testing; a brief input interruption can occur when a cable is unplugged.
+          - The fix is CI-built but still needs on-device verification in Practice Mode. Bluetooth and Dual Connection failover require real-device testing; a brief input interruption can occur when a cable is unplugged.
           - The new PC tabs provide setup instructions and status diagnostics; choose the actual transport mode in the phone controller.
           - Test in Practice Mode first, not a ranked match.
           - This is an independent community project and is not affiliated with or endorsed by Moonton.
@@ -455,7 +469,7 @@ jobs:
           sha256sum MLBB-Link-Touch-Bridge.apk MLBB-Link-Phone-Controller.apk > SHA256SUMS.txt
           zip -q MLBB-Link-APKs.zip MLBB-Link-Touch-Bridge.apk MLBB-Link-Phone-Controller.apk SHA256SUMS.txt
 
-      - name: Publish rolling beta and refresh update manifest
+      - name: Publish normal v0.13.0 release and refresh update manifest
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -475,13 +489,13 @@ jobs:
           if gh release view mlbb-link-beta >/dev/null 2>&1; then
             gh release upload mlbb-link-beta "$phone" "$bridge" "$host" "$source_bundle" --clobber
           else
-            gh release create mlbb-link-beta "$phone" "$bridge" "$host" "$source_bundle" --title "MLBB Link v0.12.0" --notes-file output/RELEASE_NOTES.md
+            gh release create mlbb-link-beta "$phone" "$bridge" "$host" "$source_bundle" --title "MLBB Link v0.13.0" --notes-file output/RELEASE_NOTES.md
           fi
-          gh release edit mlbb-link-beta --title "MLBB Link v0.12.0" --notes-file output/RELEASE_NOTES.md
+          gh release edit mlbb-link-beta --title "MLBB Link v0.13.0" --notes-file output/RELEASE_NOTES.md
           release_id="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/mlbb-link-beta" --jq '.id')"
           # Promote the existing rolling release to a normal public release (not a prerelease).
           gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${release_id}" \
-            -F name="MLBB Link v0.12.0" \
+            -F name="MLBB Link v0.13.0" \
             -F prerelease=false \
             -F draft=false \
             -F body="$(cat output/RELEASE_NOTES.md)"
