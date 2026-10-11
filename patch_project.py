@@ -483,7 +483,6 @@ def detect_lan_ip() -> str:
                             if info[0] == socket.AF_INET and _usable_lan_ip(info[4][0]) and not _likely_container_ip(info[4][0], "eth0")})
         if addresses: return addresses[0]
     except OSError: pass
-    return "not detected"
     # NetworkManager fallback for Bazzite Wi-Fi/Ethernet addresses.
     try:
         devices = subprocess.run(["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device", "status"], text=True, capture_output=True, timeout=2.0, check=False).stdout.splitlines()
@@ -508,6 +507,7 @@ def detect_lan_ip() -> str:
             if _usable_lan_ip(value) and not value.startswith(("10.88.", "10.89.", "192.168.240.", "192.168.241.")):
                 return value
     except (OSError, subprocess.SubprocessError): pass
+    return "not detected"
 '''
 h=h[:ip_start]+ip_detector+h[ip_end:]
 if '"phone_connected": False' not in h:
