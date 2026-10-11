@@ -326,6 +326,9 @@ def make_sora_variants(folder: Path) -> None:
 def keep_adb_reverse_available(host_path: Path) -> None:
     """Retry ADB reverse after the host starts so USB mode works when the phone is plugged in later."""
     source = host_path.read_text()
+    source = source.replace('HOST_VERSION = "0.9.0"', 'HOST_VERSION = "0.10.0"', 1)
+    # Send an actual line terminator for each TCP JSON event acknowledgement.
+    source = source.replace(r'self.wfile.write(b"OK\\n")', r'self.wfile.write(b"OK\n")', 1)
     if "def _maintain_adb_reverse(port: int)" not in source:
         helper = r"""
 
