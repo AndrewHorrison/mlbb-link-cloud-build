@@ -63,7 +63,16 @@ async function checkUpdate(){try{const r=await fetch('https://raw.githubusercont
     host = host[:start] + update_js + host[end:]
     host = once(host, '</div>\n<nav class="connection-tabs"',
                 '</div><div id="hostUpdateBanner" style="display:none;margin-top:10px;background:#263c32;border:1px solid #66c99a;border-radius:12px;padding:14px;color:#e8fff3"><span id="hostUpdateText">PC host update available.</span> · <a id="hostBannerDownload" style="color:#ffe29a;font-weight:800" href="https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/mlbb-link-beta/mlbb_link_host.py" target="_blank" rel="noopener">DOWNLOAD PC HOST</a> (restart required)</div>\n<nav class="connection-tabs"', "PC host update banner insertion")
+    # Normalize legacy owner URLs throughout the dashboard and Android updater source.
+    host = host.replace("augustinejacyandrew-lgtm/mlbb-link-cloud-build",
+                        "AndrewHorrison/mlbb-link-cloud-build")
     hp.write_text(host, encoding="utf-8")
+    phone_source = root / "phone-controller" / "app" / "src" / "main" / "java" / "com" / "mlbblink" / "controller" / "MainActivity.java"
+    if phone_source.is_file():
+        phone_text = phone_source.read_text(encoding="utf-8")
+        phone_text = phone_text.replace("augustinejacyandrew-lgtm/mlbb-link-cloud-build",
+                                        "AndrewHorrison/mlbb-link-cloud-build")
+        phone_source.write_text(phone_text, encoding="utf-8")
 
     for p in (root / "phone-controller/app/build.gradle", root / "waydroid-touch-bridge/app/build.gradle"):
         gradle = p.read_text(encoding="utf-8")
