@@ -77,7 +77,7 @@ jobs:
           set -euo pipefail
           assets="source/mlbb-link/phone-controller/app/src/main/res/drawable-nodpi"
           base="https://mlbb.mezes.uz/img/skills"
-          for hero in miya layla alucard tigreal gusion fanny; do
+          for hero in miya layla alucard tigreal gusion fanny alice saber balmond eudora zilong franco akai karina clint bruno bane; do
             for spec in "skill1:1" "skill2:2" "ultimate:3"; do
               source_name="$(printf '%s' "$spec" | cut -d: -f1)"
               skill_no="$(printf '%s' "$spec" | cut -d: -f2)"
@@ -98,7 +98,7 @@ jobs:
           set -euo pipefail
           assets="source/mlbb-link/phone-controller/app/src/main/res/drawable-nodpi"
           mkdir -p "$assets"
-          for hero in nana dyrroth sora miya layla alucard tigreal gusion fanny; do
+          for hero in nana dyrroth sora miya layla alucard tigreal gusion fanny alice saber balmond eudora zilong franco akai karina clint bruno bane; do
             ext=png
             case "$hero" in
               nana) url="https://raw.githubusercontent.com/Lara3924/Lara_Image/main/Nana%20-%20Hero051.png" ;;
@@ -109,7 +109,18 @@ jobs:
               tigreal) url="https://raw.githubusercontent.com/Lara3924/Lara_Image/main/Tigreal%20-%20Hero061.png" ;;
               gusion) url="https://raw.githubusercontent.com/Lara3924/Lara_Image/main/Gusion%20-%20Hero561.png" ;;
               fanny) url="https://raw.githubusercontent.com/Lara3924/Lara_Image/main/Fanny%20-%20Hero171.png" ;;
-              sora) url="https://mlbb.mezes.uz/img/heroes/sora-100.webp"; ext=webp ;;
+              sora) url="https://static-cdn.manabuy.com/wz_20250324103741/mlbb_20250324135329/lantern-rite-2026-genshin-impact-skins-free-rewards-details_20251217113220/sora_hero_202512171134_webp.webp"; ext=webp ;;
+              alice) url="https://raw.githubusercontent.com/Lara3924/Lara_Image/main/Alice%20-%20Hero041.png" ;;
+              saber) url="https://raw.githubusercontent.com/Lara3924/Lara_Image/main/Saber%20-%20Hero031.png" ;;
+              balmond) url="https://raw.githubusercontent.com/Lara3924/Lara_Image/main/Balmond%20-%20Hero021.png" ;;
+              eudora) url="https://raw.githubusercontent.com/Lara3924/Lara_Image/main/Eudora%20-%20Hero151.png" ;;
+              zilong) url="https://raw.githubusercontent.com/Lara3924/Lara_Image/main/Zilong%20-%20Hero161.png" ;;
+              franco) url="https://raw.githubusercontent.com/Lara3924/Lara_Image/main/Franco%20-%20Hero101.png" ;;
+              akai) url="https://raw.githubusercontent.com/Lara3924/Lara_Image/main/Akai%20-%20Hero091.png" ;;
+              karina) url="https://raw.githubusercontent.com/Lara3924/Lara_Image/main/Karina%20-%20Hero081.png" ;;
+              clint) url="https://raw.githubusercontent.com/Lara3924/Lara_Image/main/Clint%20-%20Hero131.png" ;;
+              bruno) url="https://raw.githubusercontent.com/Lara3924/Lara_Image/main/Bruno%20-%20Hero121.png" ;;
+              bane) url="https://raw.githubusercontent.com/Lara3924/Lara_Image/main/Bane%20-%20Hero111.png" ;;
             esac
             target="$assets/hero_$hero.$ext"
             tmp="$target.tmp"
