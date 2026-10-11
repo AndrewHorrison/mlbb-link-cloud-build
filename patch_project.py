@@ -1021,7 +1021,7 @@ if "heartbeatScheduler" not in s:
 
 
 # Extend the selectable hero roster and skill tables.
-s=s.replace('private final String[] heroes = {"NANA", "DYRROTH", "SORA"};', 'private final String[] heroes = {"NANA", "DYRROTH", "SORA", "MIYA", "LAYLA", "ALUCARD", "TIGREAL", "GUSION", "FANNY"};', 1)
+s=s.replace('private final String[] heroes = {"NANA", "DYRROTH", "SORA"};', 'private final String[] heroes = {"NANA", "DYRROTH", "SORA", "MIYA", "LAYLA", "ALUCARD", "TIGREAL", "GUSION", "FANNY", "ALICE", "SABER", "BALMOND", "EUDORA", "ZILONG", "FRANCO", "AKAI", "KARINA", "CLINT", "BRUNO", "BANE"};', 1)
 s=s.replace('''                {"SUNDERING STRIKE", "WINDSTRIDE", "SHIFTING SKIES"}
         };''', '''                {"SUNDERING STRIKE", "WINDSTRIDE", "SHIFTING SKIES"},
                 {"MOON ARROW", "ARROW OF ECLIPSE", "MOONLIGHT SONATA"},
@@ -1029,7 +1029,18 @@ s=s.replace('''                {"SUNDERING STRIKE", "WINDSTRIDE", "SHIFTING SKIE
                 {"GROUND SPLITTER", "SPINNING SLASH", "FISSION WAVE"},
                 {"ATTACK WAVE", "SACRED HAMMER", "IMPALE"},
                 {"SWORDSPIKE", "SHADOWBLADE SLAUGHTER", "INCANDESCENCE"},
-                {"TORNADO STRIKE", "STEEL CABLE", "CUT THROAT"}
+                {"TORNADO STRIKE", "STEEL CABLE", "CUT THROAT"},
+                {"FLOWING BLOOD", "BLOOD AWE", "BLOOD ODE"},
+                {"FLYING SWORD", "CHARGE", "TRIPLE SWEEP"},
+                {"SOUL LOCK", "CYCLONE SWEEP", "LETHAL COUNTER"},
+                {"FORKED LIGHTNING", "BALL LIGHTNING", "THUNDER'S WRATH"},
+                {"SPEAR FLIP", "SPEAR STRIKE", "SUPREME WARRIOR"},
+                {"IRON HOOK", "FURY SHOCK", "BLOODY HUNT"},
+                {"HEADBUTT", "BODY SLAM", "HEAVY SPIN"},
+                {"DANCE OF BLADES", "DANCE OF DEATH", "SHADOW ASSAULT"},
+                {"QUICK DRAW", "TRAPPING RECOIL", "HOWITZER"},
+                {"VOLLEY SHOT", "FLYING TACKLE", "WORLDIE"},
+                {"CRAB CLAW CANNON", "ALE", "DEADLY CATCH"}
         };''', 1)
 s=s.replace('''                {5000, 8000, 24000}
         };''', '''                {5000, 8000, 24000},
@@ -1038,11 +1049,22 @@ s=s.replace('''                {5000, 8000, 24000}
                 {6000, 9000, 35000},
                 {7000, 12000, 40000},
                 {5000, 9000, 30000},
-                {6000, 12000, 25000}
+                {6000, 12000, 25000},
+                {5000, 10000, 40000},
+                {8000, 12000, 30000},
+                {8000, 7000, 40000},
+                {7000, 9000, 45000},
+                {10000, 7000, 30000},
+                {15000, 7000, 50000},
+                {9000, 6000, 40000},
+                {6000, 9000, 40000},
+                {10000, 9000, 30000},
+                {8000, 7000, 30000},
+                {6000, 9000, 40000}
         };''', 1)
-s=s.replace('private final int[] heroColors = {0xFF51C9E8, 0xFFB14DFF, 0xFFFFA24A};', 'private final int[] heroColors = {0xFF51C9E8, 0xFFB14DFF, 0xFFFFA24A, 0xFF78C8FF, 0xFFFFC85C, 0xFF7D7CF5, 0xFF7CE6C0, 0xFFBA8CFF, 0xFF8EDCFF};', 1)
-s=s.replace('private final Bitmap[][] skillArt = new Bitmap[3][3];', 'private final Bitmap[][] skillArt = new Bitmap[9][3];\n        private final Bitmap[] heroPortraits = new Bitmap[9];\n        private final Bitmap[][] soraVariantArt = new Bitmap[2][3];', 1)
-s=s.replace('String[] keys = {"nana", "dyrroth", "sora"};', 'String[] keys = {"nana", "dyrroth", "sora", "miya", "layla", "alucard", "tigreal", "gusion", "fanny"};\n            for (int hero = 0; hero < keys.length; hero++) { int id = getResources().getIdentifier("hero_" + keys[hero], "drawable", getContext().getPackageName()); if (id != 0) { try { heroPortraits[hero] = BitmapFactory.decodeResource(getResources(), id); } catch (RuntimeException ignored) { } } }', 1)
+s=s.replace('private final int[] heroColors = {0xFF51C9E8, 0xFFB14DFF, 0xFFFFA24A};', 'private final int[] heroColors = {0xFF51C9E8, 0xFFB14DFF, 0xFFFFA24A, 0xFF78C8FF, 0xFFFFC85C, 0xFF7D7CF5, 0xFF7CE6C0, 0xFFBA8CFF, 0xFF8EDCFF, 0xFFB8A4F4, 0xFF97D4FF, 0xFFC7764D, 0xFF8E9CFF, 0xFF70C9EE, 0xFF7AB6B0, 0xFF67B6D7, 0xFFDC8CFF, 0xFFEEB76F, 0xFF5D9DE0, 0xFFE5B86D};', 1)
+s=s.replace('private final Bitmap[][] skillArt = new Bitmap[3][3];', 'private final Bitmap[][] skillArt = new Bitmap[20][3];\n        private final Bitmap[] heroPortraits = new Bitmap[20];\n        private final Bitmap[][] soraVariantArt = new Bitmap[2][3];', 1)
+s=s.replace('String[] keys = {"nana", "dyrroth", "sora"};', 'String[] keys = {"nana", "dyrroth", "sora", "miya", "layla", "alucard", "tigreal", "gusion", "fanny", "alice", "saber", "balmond", "eudora", "zilong", "franco", "akai", "karina", "clint", "bruno", "bane"};\n            for (int hero = 0; hero < keys.length; hero++) { int id = getResources().getIdentifier("hero_" + keys[hero], "drawable", getContext().getPackageName()); if (id != 0) { try { heroPortraits[hero] = BitmapFactory.decodeResource(getResources(), id); } catch (RuntimeException ignored) { } } }', 1)
 
 s=s.replace('''            float[] lefts = {0.035f, 0.355f, 0.675f};
             for (int hero = 0; hero < heroes.length; hero++) {
