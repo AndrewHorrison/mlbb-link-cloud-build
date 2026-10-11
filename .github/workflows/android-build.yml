@@ -361,6 +361,16 @@ jobs:
           grep -q 'panel-usb' source/mlbb-link/host/mlbb_link_host.py
           grep -q 'panel-bluetooth' source/mlbb-link/host/mlbb_link_host.py
           grep -q 'panel-dual' source/mlbb-link/host/mlbb_link_host.py
+          python3 - <<'PYCODE'
+          import re
+          from pathlib import Path
+          host = Path("source/mlbb-link/host/mlbb_link_host.py").read_text()
+          match = re.search(r"<script>([\\s\\S]*?)</script>", host)
+          if not match:
+              raise SystemExit("Dashboard JavaScript block missing")
+          Path("$RUNNER_TEMP/mlbb-link-dashboard.js").write_text(match.group(1))
+          PYCODE
+          node --check "$RUNNER_TEMP/mlbb-link-dashboard.js"
 
       - name: Reuse stable beta signing key for future app updates
         env:
