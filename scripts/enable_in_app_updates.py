@@ -168,11 +168,14 @@ def main() -> int:
                 if (apk.exists() && !apk.delete()) throw new IOException("Cannot replace the previous downloaded update");
                 if (!part.renameTo(apk)) throw new IOException("Cannot finalize the downloaded APK");
                 final File ready = apk;
+                final boolean checksumChecked = !expectedSha.isEmpty();
                 getSharedPreferences(PREFS, MODE_PRIVATE).edit().putInt("update_prompted_code", remoteCode).apply();
                 runOnUiThread(() -> {
                     if (progress.isShowing()) progress.dismiss();
                     updateDownloading = false;
-                    Toast.makeText(MainActivity.this, "Download complete · SHA-256 verified", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this,
+                        checksumChecked ? "Download complete · SHA-256 verified" : "Download complete · checksum not provided",
+                        Toast.LENGTH_SHORT).show();
                     launchUpdateInstaller(ready);
                 });
             } catch (Exception e) {
