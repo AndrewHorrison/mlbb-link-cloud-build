@@ -1032,6 +1032,79 @@ s=s.replace('private final int[] heroColors = {0xFF51C9E8, 0xFFB14DFF, 0xFFFFA24
 s=s.replace('private final Bitmap[][] skillArt = new Bitmap[3][3];', 'private final Bitmap[][] skillArt = new Bitmap[9][3];', 1)
 s=s.replace('String[] keys = {"nana", "dyrroth", "sora"};', 'String[] keys = {"nana", "dyrroth", "sora", "miya", "layla", "alucard", "tigreal", "gusion", "fanny"};', 1)
 
+s=s.replace('''            float[] lefts = {0.035f, 0.355f, 0.675f};
+            for (int hero = 0; hero < heroes.length; hero++) {
+                float left = w * lefts[hero], right = left + w * 0.29f;''', '''            float[] lefts = {0.035f, 0.355f, 0.675f};
+            int pages = (heroes.length + 2) / 3;
+            heroPage = Math.max(0, Math.min(heroPage, pages - 1));
+            for (int slot = 0; slot < 3; slot++) {
+                int hero = heroPage * 3 + slot;
+                if (hero >= heroes.length) continue;
+                float left = w * lefts[slot], right = left + w * 0.29f;''', 1)
+s=s.replace('''            text(c, "LONG-PRESS THE BATTLE SPELL BUTTON IN-GAME TO CHANGE SPELL",
+                    w * 0.50f, h * 0.875f, unit * 0.020f, 0xFF9DAFBC, false, Paint.Align.CENTER);''', '''            text(c, "‹ PREV", w * 0.19f, h * 0.855f, unit * 0.025f, heroPage > 0 ? 0xFFFFD77A : 0xFF60717C, true, Paint.Align.CENTER);
+            text(c, "PAGE " + (heroPage + 1) + " / " + pages, w * 0.50f, h * 0.855f, unit * 0.022f, 0xFFD2DFE8, true, Paint.Align.CENTER);
+            text(c, "NEXT ›", w * 0.81f, h * 0.855f, unit * 0.025f, heroPage < pages - 1 ? 0xFFFFD77A : 0xFF60717C, true, Paint.Align.CENTER);
+            text(c, "LONG-PRESS THE BATTLE SPELL BUTTON TO CHANGE SPELL",
+                    w * 0.50f, h * 0.925f, unit * 0.018f, 0xFF9DAFBC, false, Paint.Align.CENTER);''', 1)
+s=s.replace('''            float[] heroXs = {0.045f, 0.090f, 0.135f};
+            float heroY = h * 0.065f;
+            float heroR = unit * 0.022f;
+            for (int i = 0; i < heroes.length; i++) {
+                float x = w * heroXs[i];''', '''            float heroY = h * 0.065f;
+            float heroR = unit * (heroes.length > 5 ? 0.0155f : 0.022f);
+            for (int i = 0; i < heroes.length; i++) {
+                float x = w * (0.045f + i * 0.035f);''', 1)
+s=s.replace('''                text(c, i == 0 ? "N" : (i == 1 ? "D" : "S"), x, heroY + heroR * 0.34f,
+                        heroR * 1.06f, Color.WHITE, true, Paint.Align.CENTER);
+            }
+            RectF scoreBox''', '''                text(c, heroes[i].substring(0, 1), x, heroY + heroR * 0.34f,
+                        heroR * 1.05f, Color.WHITE, true, Paint.Align.CENTER);
+            }
+            if (heroIndex == 2) text(c, "SORA FORM: " + (soraForm == 0 ? "BASE" : (soraForm == 1 ? "ASSASSIN" : "TANK")),
+                    w * 0.285f, h * 0.165f, unit * 0.020f, 0xFFFFD77A, true, Paint.Align.CENTER);
+            RectF scoreBox''', 1)
+s=s.replace('''                if (heroPickMode) {
+                    if (y >= h * 0.30f && y <= h * 0.80f) {
+                        int selectedHero = x < w * 0.34f ? 0 : (x < w * 0.66f ? 1 : 2);
+                        selectHero(selectedHero);
+                    }
+                    return true;
+                }
+                if (heroTabHit(x, y)) { heroPickMode = true; invalidate(); return true; }''', '''                if (heroPickMode) {
+                    if (y >= h * 0.30f && y <= h * 0.80f) {
+                        int slot = x < w * 0.34f ? 0 : (x < w * 0.66f ? 1 : 2);
+                        int selectedHero = heroPage * 3 + slot;
+                        if (selectedHero < heroes.length) selectHero(selectedHero);
+                    } else if (y >= h * 0.80f && y <= h * 0.90f) {
+                        int pages = (heroes.length + 2) / 3;
+                        if (x < w * 0.34f) heroPage = Math.max(0, heroPage - 1);
+                        else if (x > w * 0.66f) heroPage = Math.min(pages - 1, heroPage + 1);
+                        invalidate();
+                    }
+                    return true;
+                }
+                if (heroTabHit(x, y)) { heroPickMode = true; heroPage = heroIndex / 3; invalidate(); return true; }
+                if (heroIndex == 2 && y >= h * 0.11f && y <= h * 0.20f && x >= w * 0.18f && x <= w * 0.39f) {
+                    soraForm = (soraForm + 1) % 3;
+                    for (int i = 0; i < cooldownUntil.length; i++) cooldownUntil[i] = 0L;
+                    Toast.makeText(MainActivity.this, "Sora form: " + (soraForm == 0 ? "Base" : (soraForm == 1 ? "Assassin" : "Tank")), Toast.LENGTH_SHORT).show();
+                    invalidate(); return true;
+                }
+                if (y >= h * 0.025f && y <= h * 0.105f && x >= w * 0.18f && x <= w * 0.37f) {
+                    chooseHero(x); return true;
+                }''', 1)
+s=s.replace('int next = Math.round((x / w - 0.045f) / 0.045f);','int next = Math.round((x / w - 0.045f) / 0.035f);',1)
+s=s.replace('''            heroIndex = index;
+            heroPickMode = false;''', '''            heroIndex = index;
+            heroPage = index / 3;
+            soraForm = 0;
+            heroPickMode = false;''', 1)
+s=s.replace('long total = cooldowns[heroIndex][skill];','long total = currentSkillCooldown(skill);',1)
+s=s.replace('text(c, skillNames[heroIndex][skill], x, y + r * 1.27f,','text(c, currentSkillName(skill), x, y + r * 1.27f,',1)
+s=s.replace('if (cooldownUntil[skill] <= now) cooldownUntil[skill] = now + cooldowns[heroIndex][skill];','if (cooldownUntil[skill] <= now) cooldownUntil[skill] = now + currentSkillCooldown(skill);',1)
+s=s.replace("        private void drawSkillButton(Canvas c,", "        private String currentSkillName(int skill) {\n            if (heroIndex == 2 && soraForm == 1) return new String[]{\"ASSASSIN • SHADOW CUT\", \"ASSASSIN • STORM DASH\", \"ASSASSIN • SKY EXECUTION\"}[skill];\n            if (heroIndex == 2 && soraForm == 2) return new String[]{\"TANK • THUNDER GUARD\", \"TANK • STORM BASTION\", \"TANK • HEAVEN AEGIS\"}[skill];\n            return skillNames[heroIndex][skill];\n        }\n        private long currentSkillCooldown(int skill) {\n            if (heroIndex == 2 && soraForm == 1) return new long[]{6500, 9000, 28000}[skill];\n            if (heroIndex == 2 && soraForm == 2) return new long[]{8000, 11000, 32000}[skill];\n            return cooldowns[heroIndex][skill];\n        }\n        private void drawSkillButton(Canvas c,", 1)
+
 phone.write_text(s)
 
 phone_manifest = root / "phone-controller/app/src/main/AndroidManifest.xml"
