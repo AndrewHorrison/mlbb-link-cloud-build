@@ -1,4 +1,4 @@
-name: Publish MLBB Link as a normal release
+name: Finalize the MLBB Link versioned release
 
 on:
   workflow_dispatch:
@@ -10,38 +10,54 @@ permissions:
   contents: write
 
 jobs:
-  promote:
-    name: Promote existing v0.12.0 release
+  finalize:
+    name: Verify v0.13.0 and retire the confusing rolling alias
     runs-on: ubuntu-24.04
     steps:
-      - name: Mark the rolling release as public and non-prerelease
+      - name: Confirm the versioned release and clean up old alias
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          release_id="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/mlbb-link-beta" --jq '.id')"
+          tag="v0.13.0"
+          release_id="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${tag}" --jq '.id')"
+          prerelease="$(gh api "repos/${GITHUB_REPOSITORY}/releases/${release_id}" --jq '.prerelease')"
+          draft="$(gh api "repos/${GITHUB_REPOSITORY}/releases/${release_id}" --jq '.draft')"
+          test "${prerelease}" = "false"
+          test "${draft}" = "false"
           gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${release_id}" \
-            -F name="MLBB Link v0.12.0" \
+            -F name="MLBB Link v0.13.0" \
             -F prerelease=false \
             -F draft=false \
             -F body="$(cat <<'NOTES'
-          # MLBB Link v0.12.0
+          # MLBB Link v0.13.0
 
-          A public release of MLBB Link for connecting an Android controller to the MLBB Link host on a PC / Waydroid setup.
+          A community release for connecting an Android controller to the MLBB Link host on a PC / Waydroid setup.
 
-          ## What's included
-          - Android phone controller APK with hero and skill controls.
-          - PC host dashboard with Overview, Wi-Fi, USB, Bluetooth Beta, Dual Connection, and Updates sections.
-          - In-app APK download with progress and SHA-256 verification.
-          - Android's native installer handles the final installation approval; Android does not permit this app to silently install its own updates.
-          - Waydroid touch bridge APK and Python PC host script.
+          ## What's new
+          - Skill taps now use reliable normal tap events; a held drag starts an aiming gesture only after intentional movement.
+          - Lower-latency sender coalesces stale joystick/aim movement samples and caches the PC IP lookup.
+          - In-game-inspired HUD with a translucent minimap and larger skill touch targets, based on community custom HUD preferences.
+          - App launcher name and HUD display **MLBB Link v0.13.0**.
+          - PC dashboard with Overview, Wi-Fi, USB, Bluetooth Beta, Dual Connection, and Updates sections.
+          - In-app APK download shows progress and verifies the SHA-256 checksum before handing off to Android's installer.
+          - Android versionName 0.13.0 / versionCode 15.
 
-          ## Important notes
-          - Bluetooth and USB/Wi-Fi Dual Connection failover are experimental and still need testing on real devices.
-          - Test in Practice Mode first, not a ranked match.
+          ## First upgrade from v0.12.0
+          The previous v0.12.0 signing key could not be recovered from the repository or build artifacts. This first v0.13.0 build established a new private signing key and the workflow caches it for future releases. If Android rejects either APK as an update, save your PC IP first, uninstall both the old v0.12.0 Controller and Touch Bridge, then install both v0.13.0 APKs. Uninstalling clears those apps' local settings. Future builds are configured to reuse the v0.13.0 signing key. Android still requires user approval to install APKs.
+
+          ## Known limitations
+          - The skill fix and HUD are CI-built and still need testing on your device. Test in Practice Mode before a ranked match.
+          - Bluetooth and USB/Wi-Fi Dual Connection failover are experimental and require real-device testing; a brief input interruption can occur when a cable is unplugged.
+          - The dashboard provides setup guides and diagnostics; choose the transport mode in the phone controller.
           - This is an independent community project and is not affiliated with or endorsed by Moonton.
           NOTES
           )"
-          status="$(gh api "repos/${GITHUB_REPOSITORY}/releases/${release_id}" --jq '[.name, .prerelease, .draft] | @tsv')"
-          printf 'Release status: %s\n' "$status"
-          test "$status" = $'MLBB Link v0.12.0\tfalse\tfalse'
+          if gh release view mlbb-link-beta >/dev/null 2>&1; then
+            gh release delete mlbb-link-beta --yes --cleanup-tag
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/releases/tags/v0.13.0" --jq '"Verified release: (.name), prerelease=(.prerelease), draft=(.draft)"'
+          if gh release view mlbb-link-beta >/dev/null 2>&1; then
+            echo "::error::Legacy rolling release still exists."
+            exit 1
+          fi
