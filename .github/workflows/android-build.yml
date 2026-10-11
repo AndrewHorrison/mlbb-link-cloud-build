@@ -362,13 +362,13 @@ jobs:
           grep -q 'panel-bluetooth' source/mlbb-link/host/mlbb_link_host.py
           grep -q 'panel-dual' source/mlbb-link/host/mlbb_link_host.py
           python3 - <<'PYCODE'
-          import re
+          import os, re
           from pathlib import Path
           host = Path("source/mlbb-link/host/mlbb_link_host.py").read_text()
-          match = re.search(r"<script>([\\s\\S]*?)</script>", host)
+          match = re.search(r"<script>(.*?)</script>", host, re.S)
           if not match:
               raise SystemExit("Dashboard JavaScript block missing")
-          Path("$RUNNER_TEMP/mlbb-link-dashboard.js").write_text(match.group(1))
+          (Path(os.environ["RUNNER_TEMP"]) / "mlbb-link-dashboard.js").write_text(match.group(1))
           PYCODE
           node --check "$RUNNER_TEMP/mlbb-link-dashboard.js"
 
