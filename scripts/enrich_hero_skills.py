@@ -6,6 +6,7 @@ but every selectable hero still receives three visible skill-icon resources.
 """
 from __future__ import annotations
 
+import html as html_lib
 import json
 import re
 import sys
@@ -82,7 +83,7 @@ def get_skill_records() -> dict[str, list[dict]]:
                     flat.append({
                         "name": str(skill.get("skillname") or ""),
                         "url": str(skill.get("skillicon") or ""),
-                        "description": str(skill.get("skilldesc") or ""),
+                        "description": re.sub(r"\\s+", " ", html_lib.unescape(re.sub(r"<[^>]+>", " ", str(skill.get("skilldesc") or "")))).strip(),
                         "cooldown": str(skill.get("skillcd&cost") or ""),
                         "group": group_index + 1,
                         "id": str(skill.get("skillid") or ""),
@@ -201,6 +202,50 @@ def update_java_skill_names(java_path: Path, keys: list[str], hero_names: list[s
             parsed[index] = ["SKILL 1", "SKILL 2", "ULTIMATE"]
     rows_text = ",\n".join("                {" + ", ".join(java_quote(v) for v in row[:3]) + "}" for row in parsed)
     source = source[:match.start()] + match.group(1) + "\n" + rows_text + match.group(3) + source[match.end():]
+    if "private final String[][] skillDescriptions" not in source:
+        source = source.replace(
+            "        private final long[][] cooldowns = {",
+            "        private final String[][] skillDescriptions = new String[heroes.length][3];\n"
+            "        private final String[][] skillCooldownDetails = new String[heroes.length][3];\n"
+            "        private final long[][] cooldowns = {", 1)
+    source = source.replace("            loadSkillArt();",
+                            "            loadSkillArt();\n            loadSkillDetails();", 1)
+    details_method = r"""
+        private void loadSkillDetails() {
+            try {
+                StringBuilder json = new StringBuilder();
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                        getContext().getAssets().open("hero_skill_details.json"), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) json.append(line);
+                }
+                org.json.JSONArray rows = new JSONObject(json.toString()).optJSONArray("heroes");
+                if (rows == null) return;
+                for (int i = 0; i < rows.length(); i++) {
+                    JSONObject hero = rows.optJSONObject(i);
+                    if (hero == null) continue;
+                    String name = hero.optString("hero", "");
+                    int index = -1;
+                    for (int h = 0; h < heroes.length; h++) {
+                        if (heroes[h].equalsIgnoreCase(name)) { index = h; break; }
+                    }
+                    if (index < 0) continue;
+                    org.json.JSONArray skills = hero.optJSONArray("skills");
+                    if (skills == null) continue;
+                    for (int skill = 0; skill < Math.min(3, skills.length()); skill++) {
+                        JSONObject data = skills.optJSONObject(skill);
+                        if (data == null) continue;
+                        skillDescriptions[index][skill] = data.optString("description", "");
+                        skillCooldownDetails[index][skill] = data.optString("cooldownCost", "");
+                    }
+                }
+            } catch (Exception ignored) { }
+        }
+
+"""
+    draw_marker = "        private void drawSkillButton(Canvas c, int skill,"
+    if "private void loadSkillDetails()" not in source:
+        source = source.replace(draw_marker, details_method + draw_marker, 1)
     # The current aim prompt now explains which skill is being aimed, not just the gesture.
     old = '''            String prompt = heroIndex == 2 && aimSkill == 2 && soraForm == 0
                     ? "SWIPE LEFT: THUNDER  •  RIGHT: TORRENT"
@@ -209,7 +254,15 @@ def update_java_skill_names(java_path: Path, keys: list[str], hero_names: list[s
     new = '''            String prompt = heroIndex == 2 && aimSkill == 2 && soraForm == 0
                     ? "SWIPE LEFT: THUNDER  •  RIGHT: TORRENT"
                     : currentSkillName(aimSkill) + "  •  DRAG TO AIM";
-            text(c, prompt, w*0.475f, h*0.115f, unit*0.0135f, 0xFFFFD77A, true, Paint.Align.CENTER);'''
+            text(c, prompt, w*0.475f, h*0.092f, unit*0.0135f, 0xFFFFD77A, true, Paint.Align.CENTER);
+            String detail = skillDescriptions[heroIndex][aimSkill];
+            if (detail == null || detail.isEmpty()) detail = "Skill description unavailable offline";
+            detail = detail.replaceAll("\\\\s+", " ").trim();
+            if (detail.length() > 92) detail = detail.substring(0, 89) + "...";
+            text(c, detail, w*0.475f, h*0.129f, unit*0.0095f, 0xFFD0DCE3, false, Paint.Align.CENTER);'''
+    source = source.replace(
+        "c.drawRoundRect(new RectF(w*0.20f, h*0.075f, w*0.75f, h*0.135f), unit*0.012f, unit*0.012f, p);",
+        "c.drawRoundRect(new RectF(w*0.20f, h*0.045f, w*0.75f, h*0.15f), unit*0.012f, unit*0.012f, p);", 1)
     if old in source:
         source = source.replace(old, new, 1)
     java_path.write_text(source)
