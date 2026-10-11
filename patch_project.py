@@ -1008,6 +1008,30 @@ if "heartbeatScheduler" not in s:
     s = s.replace(old_stop, new_stop, 1)
 
 
+# Extend the selectable hero roster and skill tables.
+s=s.replace('private final String[] heroes = {"NANA", "DYRROTH", "SORA"};', 'private final String[] heroes = {"NANA", "DYRROTH", "SORA", "MIYA", "LAYLA", "ALUCARD", "TIGREAL", "GUSION", "FANNY"};', 1)
+s=s.replace('''                {"SUNDERING STRIKE", "WINDSTRIDE", "SHIFTING SKIES"}
+        };''', '''                {"SUNDERING STRIKE", "WINDSTRIDE", "SHIFTING SKIES"},
+                {"MOON ARROW", "ARROW OF ECLIPSE", "MOONLIGHT SONATA"},
+                {"MALEFIC BOMB", "VOID PROJECTILE", "DESTRUCTION RUSH"},
+                {"GROUND SPLITTER", "SPINNING SLASH", "FISSION WAVE"},
+                {"ATTACK WAVE", "SACRED HAMMER", "IMPALE"},
+                {"SWORDSPIKE", "SHADOWBLADE SLAUGHTER", "INCANDESCENCE"},
+                {"TORNADO STRIKE", "STEEL CABLE", "CUT THROAT"}
+        };''', 1)
+s=s.replace('''                {5000, 8000, 24000}
+        };''', '''                {5000, 8000, 24000},
+                {5000, 12000, 30000},
+                {5000, 9000, 40000},
+                {6000, 9000, 35000},
+                {7000, 12000, 40000},
+                {5000, 9000, 30000},
+                {6000, 12000, 25000}
+        };''', 1)
+s=s.replace('private final int[] heroColors = {0xFF51C9E8, 0xFFB14DFF, 0xFFFFA24A};', 'private final int[] heroColors = {0xFF51C9E8, 0xFFB14DFF, 0xFFFFA24A, 0xFF78C8FF, 0xFFFFC85C, 0xFF7D7CF5, 0xFF7CE6C0, 0xFFBA8CFF, 0xFF8EDCFF};', 1)
+s=s.replace('private final Bitmap[][] skillArt = new Bitmap[3][3];', 'private final Bitmap[][] skillArt = new Bitmap[9][3];', 1)
+s=s.replace('String[] keys = {"nana", "dyrroth", "sora"};', 'String[] keys = {"nana", "dyrroth", "sora", "miya", "layla", "alucard", "tigreal", "gusion", "fanny"};', 1)
+
 phone.write_text(s)
 
 phone_manifest = root / "phone-controller/app/src/main/AndroidManifest.xml"
