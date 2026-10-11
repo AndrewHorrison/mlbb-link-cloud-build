@@ -778,37 +778,38 @@ s=s.replace('''            drawBottomHints(canvas);
 
 picker=r'''
         private void drawHeroPicker(Canvas c) {
-            text(c, "CHOOSE YOUR HERO", w * 0.50f, h * 0.205f, unit * 0.055f, 0xFFFFD77A, true, Paint.Align.CENTER);
-            text(c, "Tap a hero card to load its real skill art • Tap the hero badges above to switch later",
-                    w * 0.50f, h * 0.255f, unit * 0.022f, 0xFFD2DFE8, false, Paint.Align.CENTER);
-            float[] lefts = {0.035f, 0.355f, 0.675f};
+            p.setStyle(Paint.Style.FILL); p.setColor(0xE80A1218); c.drawRect(0, 0, w, h, p);
+            text(c, "CHOOSE HERO", w * 0.50f, h * 0.105f, unit * 0.050f, 0xFFFFD77A, true, Paint.Align.CENTER);
+            float cellW = w * 0.235f, cellH = h * 0.205f, gapX = w * 0.035f, gapY = h * 0.035f;
+            float leftStart = (w - (3 * cellW + 2 * gapX)) * 0.5f, topStart = h * 0.205f;
             for (int hero = 0; hero < heroes.length; hero++) {
-                float left = w * lefts[hero], right = left + w * 0.29f;
-                RectF card = new RectF(left, h * 0.305f, right, h * 0.795f);
+                int row = hero / 3, col = hero % 3;
+                float left = leftStart + col * (cellW + gapX), top = topStart + row * (cellH + gapY);
+                RectF card = new RectF(left, top, left + cellW, top + cellH);
+                p.setStyle(Paint.Style.FILL); p.setColor(hero == heroIndex ? 0xDD27382F : 0xD5101D25);
+                c.drawRoundRect(card, unit * 0.018f, unit * 0.018f, p);
+                p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(hero == heroIndex ? unit * 0.0038f : unit * 0.0015f);
+                p.setColor(hero == heroIndex ? 0xFFFFD36D : 0xFF536B78); c.drawRoundRect(card, unit * 0.018f, unit * 0.018f, p);
                 p.setStyle(Paint.Style.FILL);
-                p.setColor(hero == heroIndex ? 0xD62A342C : 0xD60A151D);
-                c.drawRoundRect(card, unit * 0.025f, unit * 0.025f, p);
-                p.setStyle(Paint.Style.STROKE);
-                p.setStrokeWidth(hero == heroIndex ? unit * 0.004f : unit * 0.0018f);
-                p.setColor(hero == heroIndex ? 0xFFFFD36D : 0xFF536B78);
-                c.drawRoundRect(card, unit * 0.025f, unit * 0.025f, p);
-                p.setStyle(Paint.Style.FILL);
-                text(c, heroes[hero], (left + right) * 0.5f, h * 0.385f, unit * 0.040f, Color.WHITE, true, Paint.Align.CENTER);
-                text(c, "SKILLS", (left + right) * 0.5f, h * 0.425f, unit * 0.019f, 0xFFFFD77A, true, Paint.Align.CENTER);
-                float center = (left + right) * 0.5f, radius = unit * 0.055f, iconY = h * 0.535f;
-                String[] labels = {"S1", "S2", "ULT"};
-                for (int skill = 0; skill < 3; skill++) {
-                    float iconX = center + (skill - 1) * unit * 0.17f;
-                    drawCircularArt(c, skillArt[hero][skill], iconX, iconY, radius);
-                    text(c, labels[skill], iconX, iconY + radius * 1.42f, unit * 0.020f, 0xFFD5E1EA, true, Paint.Align.CENTER);
-                    text(c, skillNames[hero][skill], iconX, h * 0.685f, unit * 0.014f, 0xFFB8C8D3, false, Paint.Align.CENTER);
+                float radius = Math.min(cellW * 0.31f, cellH * 0.56f), x = left + cellW * 0.5f, y = top + cellH * 0.43f;
+                Bitmap portrait = heroPortraits[hero];
+                if (portrait != null) {
+                    int save = c.save(); Path clip = new Path(); clip.addCircle(x, y, radius, Path.Direction.CW); c.clipPath(clip);
+                    Rect src = new Rect(0, 0, portrait.getWidth(), portrait.getHeight());
+                    RectF dst = new RectF(x-radius, y-radius, x+radius, y+radius);
+                    p.setColor(Color.WHITE); c.drawBitmap(portrait, src, dst, p); c.restoreToCount(save);
+                } else {
+                    p.setColor(heroColors[hero]); c.drawCircle(x, y, radius, p);
+                    p.setColor(0xFF14212A); c.drawCircle(x, y, radius * 0.78f, p);
+                    text(c, heroes[hero].substring(0, 1), x, y + radius * 0.34f, radius * 1.05f, Color.WHITE, true, Paint.Align.CENTER);
                 }
-                text(c, hero == heroIndex ? "SELECTED • TAP TO PLAY" : "TAP TO SELECT",
-                        (left + right) * 0.5f, h * 0.755f, unit * 0.020f,
-                        hero == heroIndex ? 0xFFFFD77A : 0xFFB4C5D1, true, Paint.Align.CENTER);
+                p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(unit * 0.002f);
+                p.setColor(hero == heroIndex ? 0xFFFFD36D : 0xFF8DA2AD); c.drawCircle(x, y, radius, p);
+                p.setStyle(Paint.Style.FILL);
+                String name = heroes[hero].substring(0,1) + heroes[hero].substring(1).toLowerCase(java.util.Locale.ROOT);
+                text(c, name, x, top + cellH * 0.88f, unit * 0.026f, Color.WHITE, true, Paint.Align.CENTER);
             }
-            text(c, "LONG-PRESS THE BATTLE SPELL BUTTON IN-GAME TO CHANGE SPELL",
-                    w * 0.50f, h * 0.875f, unit * 0.020f, 0xFF9DAFBC, false, Paint.Align.CENTER);
+            text(c, "TAP A HERO ICON TO SELECT", w * 0.50f, h * 0.925f, unit * 0.020f, 0xFF9DAFBC, false, Paint.Align.CENTER);
         }
 
         private void drawCircularArt(Canvas c, Bitmap art, float x, float y, float r) {
@@ -1029,7 +1030,8 @@ s=s.replace('''                {5000, 8000, 24000}
                 {6000, 12000, 25000}
         };''', 1)
 s=s.replace('private final int[] heroColors = {0xFF51C9E8, 0xFFB14DFF, 0xFFFFA24A};', 'private final int[] heroColors = {0xFF51C9E8, 0xFFB14DFF, 0xFFFFA24A, 0xFF78C8FF, 0xFFFFC85C, 0xFF7D7CF5, 0xFF7CE6C0, 0xFFBA8CFF, 0xFF8EDCFF};', 1)
-s=s.replace('private final Bitmap[][] skillArt = new Bitmap[3][3];', 'private final Bitmap[][] skillArt = new Bitmap[9][3];', 1)
+s=s.replace('private final Bitmap[][] skillArt = new Bitmap[3][3];', 'private final Bitmap[][] skillArt = new Bitmap[9][3];
+        private final Bitmap[] heroPortraits = new Bitmap[9];', 1)
 s=s.replace('String[] keys = {"nana", "dyrroth", "sora"};', 'String[] keys = {"nana", "dyrroth", "sora", "miya", "layla", "alucard", "tigreal", "gusion", "fanny"};', 1)
 
 s=s.replace('''            float[] lefts = {0.035f, 0.355f, 0.675f};
@@ -1072,15 +1074,13 @@ s=s.replace('''                if (heroPickMode) {
                     return true;
                 }
                 if (heroTabHit(x, y)) { heroPickMode = true; invalidate(); return true; }''', '''                if (heroPickMode) {
-                    if (y >= h * 0.30f && y <= h * 0.80f) {
-                        int slot = x < w * 0.34f ? 0 : (x < w * 0.66f ? 1 : 2);
-                        int selectedHero = heroPage * 3 + slot;
+                    float cellW = w * 0.235f, cellH = h * 0.205f, gapX = w * 0.035f, gapY = h * 0.035f;
+                    float leftStart = (w - (3 * cellW + 2 * gapX)) * 0.5f, topStart = h * 0.205f;
+                    if (x >= leftStart && x <= w - leftStart && y >= topStart && y <= topStart + 3 * cellH + 2 * gapY) {
+                        int col = Math.min(2, Math.max(0, (int)((x - leftStart) / (cellW + gapX))));
+                        int row = Math.min(2, Math.max(0, (int)((y - topStart) / (cellH + gapY))));
+                        int selectedHero = row * 3 + col;
                         if (selectedHero < heroes.length) selectHero(selectedHero);
-                    } else if (y >= h * 0.80f && y <= h * 0.90f) {
-                        int pages = (heroes.length + 2) / 3;
-                        if (x < w * 0.34f) heroPage = Math.max(0, heroPage - 1);
-                        else if (x > w * 0.66f) heroPage = Math.min(pages - 1, heroPage + 1);
-                        invalidate();
                     }
                     return true;
                 }
