@@ -1030,8 +1030,8 @@ s=s.replace('''                {5000, 8000, 24000}
                 {6000, 12000, 25000}
         };''', 1)
 s=s.replace('private final int[] heroColors = {0xFF51C9E8, 0xFFB14DFF, 0xFFFFA24A};', 'private final int[] heroColors = {0xFF51C9E8, 0xFFB14DFF, 0xFFFFA24A, 0xFF78C8FF, 0xFFFFC85C, 0xFF7D7CF5, 0xFF7CE6C0, 0xFFBA8CFF, 0xFF8EDCFF};', 1)
- s=s.replace('private final Bitmap[][] skillArt = new Bitmap[3][3];', 'private final Bitmap[][] skillArt = new Bitmap[9][3];\\n        private final Bitmap[] heroPortraits = new Bitmap[9];', 1)
- s=s.replace('String[] keys = {"nana", "dyrroth", "sora"};', 'String[] keys = {"nana", "dyrroth", "sora", "miya", "layla", "alucard", "tigreal", "gusion", "fanny"};\\n            for (int hero = 0; hero < keys.length; hero++) { int id = getResources().getIdentifier("hero_" + keys[hero], "drawable", getContext().getPackageName()); if (id != 0) { try { heroPortraits[hero] = BitmapFactory.decodeResource(getResources(), id); } catch (RuntimeException ignored) { } } }', 1)
+ s=s.replace('private final Bitmap[][] skillArt = new Bitmap[3][3];', 'private final Bitmap[][] skillArt = new Bitmap[9][3];\n        private final Bitmap[] heroPortraits = new Bitmap[9];', 1)
+ s=s.replace('String[] keys = {"nana", "dyrroth", "sora"};', 'String[] keys = {"nana", "dyrroth", "sora", "miya", "layla", "alucard", "tigreal", "gusion", "fanny"};\n            for (int hero = 0; hero < keys.length; hero++) { int id = getResources().getIdentifier("hero_" + keys[hero], "drawable", getContext().getPackageName()); if (id != 0) { try { heroPortraits[hero] = BitmapFactory.decodeResource(getResources(), id); } catch (RuntimeException ignored) { } } }', 1)
 
 s=s.replace('''            float[] lefts = {0.035f, 0.355f, 0.675f};
             for (int hero = 0; hero < heroes.length; hero++) {
