@@ -308,7 +308,7 @@ jobs:
 
       - name: Reuse stable beta signing key for future app updates
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           mkdir -p "$HOME/.android" "$RUNNER_TEMP/mlbb-link-key"
