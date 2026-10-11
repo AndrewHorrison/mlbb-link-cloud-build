@@ -93,6 +93,24 @@ jobs:
           done
           echo "Additional hero artwork fetch finished"
 
+      - name: Bundle hero portrait icons
+        run: |
+          set -euo pipefail
+          assets="source/mlbb-link/phone-controller/app/src/main/res/drawable-nodpi"
+          mkdir -p "$assets"
+          base="https://mlbb.mezes.uz/img/heroes"
+          for hero in nana dyrroth sora miya layla alucard tigreal gusion fanny; do
+            target="$assets/hero_$hero.webp"
+            tmp="$target.tmp"
+            if curl -fLsS --retry 2 --connect-timeout 10 "$base/$hero-100.webp" -o "$tmp"; then
+              mv "$tmp" "$target"
+              echo "Downloaded $hero portrait"
+            else
+              rm -f "$tmp" "$target"
+              echo "Optional portrait unavailable for $hero; initials fallback will be used"
+            fi
+          done
+
       - name: Bundle authentic battle-spell artwork
         run: |
           set -euo pipefail
@@ -160,7 +178,7 @@ jobs:
           zip -q MLBB-Link-APKs.zip MLBB-Link-Touch-Bridge.apk MLBB-Link-Phone-Controller.apk SHA256SUMS.txt
 
       - name: Upload downloads
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: MLBB-Link-APKs
           path: output/*
