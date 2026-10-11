@@ -484,6 +484,30 @@ def detect_lan_ip() -> str:
         if addresses: return addresses[0]
     except OSError: pass
     return "not detected"
+    # NetworkManager fallback for Bazzite Wi-Fi/Ethernet addresses.
+    try:
+        devices = subprocess.run(["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device", "status"], text=True, capture_output=True, timeout=2.0, check=False).stdout.splitlines()
+        candidates = []
+        for line in devices:
+            fields = line.split(":")
+            if len(fields) < 3 or fields[2].strip().lower() != "connected": continue
+            device, kind = fields[0].strip(), fields[1].strip().lower()
+            if _ignored_interface(device): continue
+            output = subprocess.run(["nmcli", "-g", "IP4.ADDRESS", "device", "show", device], text=True, capture_output=True, timeout=2.0, check=False).stdout
+            for item in output.splitlines():
+                address = item.strip().split("/", 1)[0]
+                if _usable_lan_ip(address) and not _likely_container_ip(address, device):
+                    candidates.append((2 if kind == "wifi" else 1, address))
+        if candidates:
+            candidates.sort(reverse=True)
+            return candidates[0][1]
+    except (OSError, subprocess.SubprocessError): pass
+    try:
+        output = subprocess.run(["hostname", "-I"], text=True, capture_output=True, timeout=1.5, check=False).stdout
+        for value in output.split():
+            if _usable_lan_ip(value) and not value.startswith(("10.88.", "10.89.", "192.168.240.", "192.168.241.")):
+                return value
+    except (OSError, subprocess.SubprocessError): pass
 '''
 h=h[:ip_start]+ip_detector+h[ip_end:]
 if '"phone_connected": False' not in h:
