@@ -184,7 +184,7 @@ def main() -> int:
     elif "private void scheduleMovementDrain()" not in java:
         raise SystemExit("Could not locate UdpSender send method")
 
-    if "pendingJoystickMove" not in java:
+    if "private final java.util.concurrent.atomic.AtomicReference<JSONObject> pendingJoystickMove" not in java:
         java = once(java,
             "        private final ExecutorService io = Executors.newSingleThreadExecutor();",
             "        private final ExecutorService io = Executors.newSingleThreadExecutor();\n"
