@@ -1,0 +1,26 @@
+name: Keep MLBB Link signing key cache warm
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 5 * * 1"
+
+permissions:
+  actions: read
+
+jobs:
+  warm-cache:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Restore the private signing key cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: mlbb-link-signing-key-v1
+      - name: Verify a signing key is available
+        run: |
+          if [[ ! -s "$HOME/.android/debug.keystore" ]]; then
+            echo "::error::The MLBB Link signing key cache is missing. Run the Android build workflow to seed it before publishing a new version."
+            exit 1
+          fi
+          echo "Private signing key cache restored. No key material is printed or uploaded."
