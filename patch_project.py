@@ -1378,7 +1378,8 @@ aim_methods = '''        private boolean isAimCancelZone(float x, float y) {
         }
 
 '''
-if "private void drawBattleSpellPicker(Canvas c)" not in s: throw new Error("Spell picker insertion marker missing");
+if "private void drawBattleSpellPicker(Canvas c)" not in s:
+    raise SystemExit("Spell picker insertion marker missing")
 s=s.replace("        private void drawBattleSpellPicker(Canvas c) {",aim_methods+"        private void drawBattleSpellPicker(Canvas c) {",1);
 
 old_skill_names = '''        private String currentSkillName(int skill) {
