@@ -56,6 +56,16 @@ new_ctor = """        ControllerView(Context context) {
                         try { skillArt[hero][skill] = BitmapFactory.decodeResource(getResources(), id); }
                         catch (RuntimeException ignored) { skillArt[hero][skill] = null; }
                     }
+                    if (hero == 2) {
+                        String[] variants = {"sora_thunder_", "sora_torrent_"};
+                        for (int form = 0; form < 2; form++) {
+                            int variantId = getResources().getIdentifier(variants[form] + (skill + 1), "drawable", getContext().getPackageName());
+                            if (variantId != 0) {
+                                try { soraVariantArt[form][skill] = BitmapFactory.decodeResource(getResources(), variantId); }
+                                catch (RuntimeException ignored) { soraVariantArt[form][skill] = null; }
+                            }
+                        }
+                    }
                 }
             }
         }"""
@@ -87,7 +97,8 @@ old_art = """            p.setStyle(Paint.Style.FILL); p.setShader(new LinearGra
             drawSkillGlyph(c, skill, x, y - r * 0.04f, r * 0.49f, accent);
             text(c, skill == 2 ? "ULT" : "S" + (skill + 1), x, y + r * 0.67f, r * 0.29f, Color.WHITE, true, Paint.Align.CENTER);"""
 new_art = """            p.setStyle(Paint.Style.FILL); p.setShader(null); p.setColor(0xFF101722); c.drawCircle(x, y, r * 0.87f, p);
-            Bitmap artwork = skillArt[heroIndex][skill];
+            Bitmap artwork = heroIndex == 2 && soraForm > 0 && soraVariantArt[soraForm - 1][skill] != null
+                    ? soraVariantArt[soraForm - 1][skill] : skillArt[heroIndex][skill];
             if (artwork != null) {
                 int save = c.save();
                 Path clip = new Path(); clip.addCircle(x, y, r * 0.845f, Path.Direction.CW); c.clipPath(clip);
@@ -1030,7 +1041,7 @@ s=s.replace('''                {5000, 8000, 24000}
                 {6000, 12000, 25000}
         };''', 1)
 s=s.replace('private final int[] heroColors = {0xFF51C9E8, 0xFFB14DFF, 0xFFFFA24A};', 'private final int[] heroColors = {0xFF51C9E8, 0xFFB14DFF, 0xFFFFA24A, 0xFF78C8FF, 0xFFFFC85C, 0xFF7D7CF5, 0xFF7CE6C0, 0xFFBA8CFF, 0xFF8EDCFF};', 1)
-s=s.replace('private final Bitmap[][] skillArt = new Bitmap[3][3];', 'private final Bitmap[][] skillArt = new Bitmap[9][3];\n        private final Bitmap[] heroPortraits = new Bitmap[9];', 1)
+s=s.replace('private final Bitmap[][] skillArt = new Bitmap[3][3];', 'private final Bitmap[][] skillArt = new Bitmap[9][3];\n        private final Bitmap[] heroPortraits = new Bitmap[9];\n        private final Bitmap[][] soraVariantArt = new Bitmap[2][3];', 1)
 s=s.replace('String[] keys = {"nana", "dyrroth", "sora"};', 'String[] keys = {"nana", "dyrroth", "sora", "miya", "layla", "alucard", "tigreal", "gusion", "fanny"};\n            for (int hero = 0; hero < keys.length; hero++) { int id = getResources().getIdentifier("hero_" + keys[hero], "drawable", getContext().getPackageName()); if (id != 0) { try { heroPortraits[hero] = BitmapFactory.decodeResource(getResources(), id); } catch (RuntimeException ignored) { } } }', 1)
 
 s=s.replace('''            float[] lefts = {0.035f, 0.355f, 0.675f};
