@@ -1063,7 +1063,7 @@ s=s.replace('''                text(c, i == 0 ? "N" : (i == 1 ? "D" : "S"), x, h
             RectF scoreBox''', '''                text(c, heroes[i].substring(0, 1), x, heroY + heroR * 0.34f,
                         heroR * 1.05f, Color.WHITE, true, Paint.Align.CENTER);
             }
-            if (heroIndex == 2) text(c, "SORA FORM: " + (soraForm == 0 ? "BASE" : (soraForm == 1 ? "ASSASSIN" : "TANK")),
+            if (heroIndex == 2) text(c, "SORA FORM: " + (soraForm == 0 ? "BASE" : (soraForm == 1 ? "THUNDER" : "TORRENT")),
                     w * 0.285f, h * 0.165f, unit * 0.020f, 0xFFFFD77A, true, Paint.Align.CENTER);
             RectF scoreBox''', 1)
 s=s.replace('''                if (heroPickMode) {
@@ -1088,7 +1088,7 @@ s=s.replace('''                if (heroPickMode) {
                 if (heroIndex == 2 && y >= h * 0.11f && y <= h * 0.20f && x >= w * 0.18f && x <= w * 0.39f) {
                     soraForm = (soraForm + 1) % 3;
                     for (int i = 0; i < cooldownUntil.length; i++) cooldownUntil[i] = 0L;
-                    Toast.makeText(MainActivity.this, "Sora form: " + (soraForm == 0 ? "Base" : (soraForm == 1 ? "Assassin" : "Tank")), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Sora form: " + (soraForm == 0 ? "Base" : (soraForm == 1 ? "Thunder" : "Torrent")), Toast.LENGTH_SHORT).show();
                     invalidate(); return true;
                 }
                 if (y >= h * 0.025f && y <= h * 0.105f && x >= w * 0.18f && x <= w * 0.37f) {
