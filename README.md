@@ -20,7 +20,7 @@ Android still requires user approval for APK installation; this app cannot silen
 
 ## Install and connect
 
-1. Download the phone controller and Waydroid bridge APKs from the [latest release](https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/tag/mlbb-link-beta).
+1. Download the phone controller and Waydroid bridge APKs from the [latest release](https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/tag/v0.13.0).
 2. Run `python3 mlbb_link_host.py` on Bazzite, preferably directly on the host rather than in Distrobox/Toolbx.
 3. Install and enable the Touch Bridge accessibility service in Waydroid.
 4. Put the PC and phone on the same trusted Wi-Fi, enter the PC LAN IPv4 address into the controller, and tap **LINK**.
@@ -42,8 +42,8 @@ Android still requires user approval for APK installation; this app cannot silen
 
 ## Links
 
-- [Download MLBB Link v0.13.0](https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/tag/mlbb-link-beta)
-- [Phone Controller APK](https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/mlbb-link-beta/MLBB-Link-Phone-Controller.apk)
-- [Waydroid Touch Bridge APK](https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/mlbb-link-beta/MLBB-Link-Touch-Bridge.apk)
+- [Download MLBB Link v0.13.0](https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/tag/v0.13.0)
+- [Phone Controller APK](https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/v0.13.0/MLBB-Link-Phone-Controller.apk)
+- [Waydroid Touch Bridge APK](https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/v0.13.0/MLBB-Link-Touch-Bridge.apk)
 - [Build workflow](https://github.com/AndrewHorrison/mlbb-link-cloud-build/actions/workflows/android-build.yml)
 - Update manifest: `updates/latest.json`
