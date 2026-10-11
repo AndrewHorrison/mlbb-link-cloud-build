@@ -801,7 +801,7 @@ if '"phone_connected": False' not in h:
 h=h.replace('''def valid_event(obj: object) -> bool:
     return isinstance(obj, dict) and obj.get("type") in {"button", "joystick"}''',
 '''def valid_event(obj: object) -> bool:
-    return isinstance(obj, dict) and obj.get("type") in {"button", "joystick", "heartbeat", "hero"}''',1)
+    return isinstance(obj, dict) and obj.get("type") in {"button", "joystick", "heartbeat", "hero", "gesture"}''',1)
 # Dashboard header now reflects the phone heartbeat, not just the running Python process.
 js_old="document.getElementById('hostStatus').textContent=d.last_error||'Listening for UDP input';document.getElementById('runState').textContent='HOST RUNNING';document.getElementById('stateDot').classList.add('ok');"
 js_new="document.getElementById('hostStatus').textContent=d.last_error||(d.phone_connected?'Phone heartbeat received':'Waiting for phone heartbeat');document.getElementById('selectedHero').textContent=d.selected_hero||'Not selected';document.getElementById('runState').textContent=d.phone_connected?'PHONE CONNECTED':'PHONE DISCONNECTED';document.getElementById('stateDot').classList.toggle('ok',!!d.phone_connected);"
@@ -1413,5 +1413,60 @@ for gradle_file in [root / "phone-controller/app/build.gradle", root / "waydroid
     text_gradle=text_gradle.replace("versionCode 7; versionName '0.5.2'","versionCode 8; versionName '0.6.1'")
     gradle_file.write_text(text_gradle)
 
+
+# Allow the Waydroid Accessibility bridge to hold, move, and release a skill touch.
+touch_path = root / "waydroid-touch-bridge/app/src/main/java/com/mlbblink/bridge/TouchAccessibilityService.java"
+ts = touch_path.read_text()
+if 'if("gesture".equals(type))' not in ts:
+    old_gesture_dispatch = '''    if("button".equals(type) && "down".equals(o.optString("state"))){tap(screenPoint((float)o.optDouble("x",0.5),(float)o.optDouble("y",0.5)));return;}'''
+    new_gesture_dispatch = '''    if("button".equals(type) && "down".equals(o.optString("state"))){tap(screenPoint((float)o.optDouble("x",0.5),(float)o.optDouble("y",0.5)));return;}
+    if("gesture".equals(type)){handleSkillGesture(o);return;}'''
+    if old_gesture_dispatch not in ts:
+        raise SystemExit("Touch bridge button dispatch marker missing")
+    ts = ts.replace(old_gesture_dispatch, new_gesture_dispatch, 1)
+ts = ts.replace('''  private GestureDescription.StrokeDescription activeStroke;
+  private PointF lastPoint;''',
+'''  private GestureDescription.StrokeDescription activeStroke;
+  private PointF lastPoint;
+  private GestureDescription.StrokeDescription skillStroke;
+  private PointF skillLastPoint;''', 1)
+if "private void handleSkillGesture(JSONObject o)" not in ts:
+    skill_methods = """
+  private void handleSkillGesture(JSONObject o){
+    String state=o.optString("state");
+    PointF p=screenPoint((float)o.optDouble("x",0.5),(float)o.optDouble("y",0.5));
+    if("down".equals(state))startSkillTouch(p);
+    else if("move".equals(state))moveSkillTouch(p);
+    else if("up".equals(state)||"cancel".equals(state))endSkillTouch(p);
+  }
+
+  private void startSkillTouch(PointF p){
+    if(skillStroke!=null)endSkillTouch(skillLastPoint==null?p:skillLastPoint);
+    Path path=new Path();path.moveTo(p.x,p.y);
+    skillStroke=new GestureDescription.StrokeDescription(path,0,100,true);
+    skillLastPoint=p;
+    dispatchGesture(new GestureDescription.Builder().addStroke(skillStroke).build(),null,null);
+  }
+
+  private void moveSkillTouch(PointF p){
+    if(skillStroke==null){startSkillTouch(p);return;}
+    Path path=new Path();path.moveTo(skillLastPoint.x,skillLastPoint.y);path.lineTo(p.x,p.y);
+    GestureDescription.StrokeDescription next=skillStroke.continueStroke(path,0,55,true);
+    if(dispatchGesture(new GestureDescription.Builder().addStroke(next).build(),null,null))skillStroke=next;
+    skillLastPoint=p;
+  }
+
+  private void endSkillTouch(PointF p){
+    if(skillStroke==null)return;
+    PointF end=p==null?(skillLastPoint==null?new PointF(0,0):skillLastPoint):p;
+    Path path=new Path();path.moveTo(skillLastPoint.x,skillLastPoint.y);path.lineTo(end.x,end.y);
+    GestureDescription.StrokeDescription next=skillStroke.continueStroke(path,0,55,false);
+    dispatchGesture(new GestureDescription.Builder().addStroke(next).build(),null,null);
+    skillStroke=null;skillLastPoint=null;
+  }
+
+"""
+    ts = ts.replace("  private void startStick(PointF p){", skill_methods + "  private void startStick(PointF p){", 1)
+touch_path.write_text(ts)
 print("Patched MLBB Link v0.5.0: LAN IP detection, connected/disconnected status, hero selection and battle spells.")
 
