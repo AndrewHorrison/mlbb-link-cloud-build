@@ -8,6 +8,7 @@ on:
       - '.github/workflows/android-build.yml'
       - 'patch_project.py'
       - 'overrides/bridge/MainActivity.java'
+      - 'scripts/**'
 
 permissions:
   contents: write
@@ -299,11 +300,52 @@ jobs:
           for marker in ("private void cycleConnectionMode", "checkForUpdates", "BT BETA", "DUAL"):
               if marker not in phone: raise SystemExit("Expected v0.9 controller feature missing: " + marker)
           if "start_tcp_control_server" not in host: raise SystemExit("USB TCP host relay missing")
+          import re
           for p in (root/"phone-controller/app/build.gradle", root/"waydroid-touch-bridge/app/build.gradle"):
               gradle = p.read_text()
-              if "versionCode 11" not in gradle or "0.9.0" not in gradle:
+              gradle = re.sub(r"versionCode\s+\d+", "versionCode 12", gradle, count=1)
+              gradle = re.sub(r"versionName\s+'[^']+'", "versionName '0.10.0'", gradle, count=1)
+              p.write_text(gradle)
+              if "versionCode 12" not in gradle or "0.10.0" not in gradle:
                   raise SystemExit("Unexpected app version in " + str(p))
-          print("v0.9 source patch applied and basic checks passed")
+          print("v0.10.0 source patch applied and app versions bumped")
+          PYCODE
+
+      - name: Enrich every hero skill icon and add skill descriptions
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet Pillow
+          python3 scripts/enrich_hero_skills.py \
+            source/mlbb-link/phone-controller \
+            source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
+          python3 -m py_compile source/mlbb-link/host/mlbb_link_host.py scripts/enrich_hero_skills.py
+          python3 - <<'PYCODE'
+          import json, re
+          from pathlib import Path
+          root = Path("source/mlbb-link")
+          app = root / "phone-controller/app"
+          java_path = app / "src/main/java/com/mlbblink/controller/MainActivity.java"
+          java = java_path.read_text()
+          def array_values(declaration):
+              match = re.search(declaration + r"\s*=\s*(\{.*?\});", java, re.S)
+              if not match: raise SystemExit("Missing Java table " + declaration)
+              return json.loads("[" + match.group(1)[1:-1] + "]")
+          heroes = array_values(r"private final String\[\] heroes")
+          keys = array_values(r"String\[\] keys")
+          if len(heroes) != len(keys): raise SystemExit("Hero/key count mismatch")
+          icons = app / "src/main/res/drawable-nodpi"
+          missing = [f"{key}:S{slot}" for key in keys for slot in (1,2,3) if not (icons / f"skill_{key}_{slot}.webp").is_file()]
+          if missing: raise SystemExit("Missing skill icon resources: " + ", ".join(missing[:20]))
+          details_path = app / "src/main/assets/hero_skill_details.json"
+          if not details_path.is_file(): raise SystemExit("Skill details JSON is missing from app assets")
+          details = json.loads(details_path.read_text())
+          if len(details.get("heroes", [])) != len(heroes): raise SystemExit("Skill metadata roster count mismatch")
+          if "private void loadSkillDetails()" not in java or "skillDescriptions[heroIndex][aimSkill]" not in java:
+              raise SystemExit("Skill descriptions are not connected to the aiming overlay")
+          variant_missing = [f"sora_{form}_{i}" for form in ("thunder","torrent") for i in (1,2,3)
+                             if not (icons / f"sora_{form}_{i}.webp").is_file()]
+          if variant_missing: raise SystemExit("Missing Sora form icons: " + ", ".join(variant_missing))
+          print(f"Verified {len(heroes)} hero entries, {len(heroes)*3} skill icons, skill details, and all Sora form icons")
           PYCODE
 
       - name: Reuse stable beta signing key for future app updates
