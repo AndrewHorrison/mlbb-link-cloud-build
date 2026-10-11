@@ -353,14 +353,18 @@ jobs:
           print(f"Verified {len(heroes)} hero entries, {len(heroes)*3} skill icons, skill details, and all Sora form icons")
           PYCODE
 
-      - name: Add PC connection center and prepare v0.11.0 release
+      - name: Add PC connection center and in-app updater for v0.12.0
         run: |
           set -euo pipefail
           python3 scripts/enhance_pc_dashboard.py source/mlbb-link
-          python3 -m py_compile source/mlbb-link/host/mlbb_link_host.py
+          python3 scripts/enable_in_app_updates.py source/mlbb-link
+          python3 -m py_compile source/mlbb-link/host/mlbb_link_host.py scripts/enhance_pc_dashboard.py scripts/enable_in_app_updates.py
           grep -q 'panel-usb' source/mlbb-link/host/mlbb_link_host.py
           grep -q 'panel-bluetooth' source/mlbb-link/host/mlbb_link_host.py
           grep -q 'panel-dual' source/mlbb-link/host/mlbb_link_host.py
+          grep -q 'DOWNLOAD IN APP' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
+          grep -q 'FileProvider' source/mlbb-link/phone-controller/app/src/main/AndroidManifest.xml
+          test -s source/mlbb-link/phone-controller/app/src/main/res/xml/file_paths.xml
           python3 - <<'PYCODE'
           import os, re
           from pathlib import Path
@@ -414,9 +418,9 @@ jobs:
           cp source/mlbb-link/phone-controller/app/build/outputs/apk/debug/app-debug.apk output/MLBB-Link-Phone-Controller.apk
           cp source/mlbb-link/host/mlbb_link_host.py output/mlbb_link_host.py
           cat > output/RELEASE_NOTES.md <<'NOTES'
-          # MLBB Link v0.11.0 Beta
+          # MLBB Link v0.12.0 Beta
 
-          A community beta for connecting an Android controller to the MLBB Link host on a PC / Waydroid setup.
+          A community beta for connecting an Android controller to the MLBB Link host on a PC / Waydroid setup. This release adds an in-app Android updater.
 
           ## What's new
           - PC dashboard connection center with Overview, Wi-Fi, USB, Bluetooth Beta, Dual Connection, and Updates tabs.
@@ -424,9 +428,11 @@ jobs:
           - USB troubleshooting for Android USB debugging, ADB authorization, and ADB reverse.
           - Bluetooth Beta pairing and RFCOMM setup guidance. Bluetooth is experimental and may not work on every device.
           - Dual Connection setup guide: intended USB-preferred operation with Wi-Fi fallback when the phone sender detects a USB transport failure.
-          - Versioned update manifest for the phone controller, Waydroid touch bridge, and PC host.
+          - In-app updater checks the public version manifest, downloads the controller APK within MLBB Link with progress, validates the SHA-256 digest, and opens Android's native installer.
+          - No browser page is opened for the APK download. Android still requires user approval; if needed, MLBB Link opens Android's per-app install permission settings.
+          - Versioned manifest includes SHA-256 hashes for the controller and bridge APKs, plus version information for the PC host.
           - PC host script and updated source bundle are included as release assets.
-          - Android versionName 0.11.0 / versionCode 13.
+          - Android versionName 0.12.0 / versionCode 14.
 
           ## Release assets
           - MLBB-Link-Phone-Controller.apk — Android controller app.
@@ -436,7 +442,7 @@ jobs:
           - MLBB-Link-Updated-Source.tar.gz — updated project source.
 
           ## Upgrade notes
-          Back up your existing setup before testing. Android updates require a compatible package ID and signing key, and Android will ask you to approve installation. Stop the PC host before replacing its Python script, then restart it.
+          Back up your existing setup before testing. Android updates require the same package ID and signing key. MLBB Link downloads the APK inside the app, verifies its hash, then hands it to Android's native installer for approval. Stop the PC host before replacing its Python script, then restart it.
 
           ## Known limitations
           - Bluetooth and Dual Connection failover require real-device testing; a brief input interruption can occur when a cable is unplugged.
@@ -472,20 +478,25 @@ jobs:
             gh release create mlbb-link-beta "$phone" "$bridge" "$host" "$source_bundle" --prerelease --title "MLBB Link v0.11.0 Beta" --notes-file output/RELEASE_NOTES.md
           fi
           mkdir -p updates
-          python3 - source/mlbb-link/phone-controller/app/build.gradle source/mlbb-link/host/mlbb_link_host.py > updates/latest.json <<'PYCODE'
-          import json,re,sys
+          python3 - source/mlbb-link/phone-controller/app/build.gradle source/mlbb-link/host/mlbb_link_host.py output/MLBB-Link-Phone-Controller.apk output/MLBB-Link-Touch-Bridge.apk > updates/latest.json <<'PYCODE'
+          import hashlib,json,re,sys
           from pathlib import Path
           gradle=Path(sys.argv[1]).read_text()
           host=Path(sys.argv[2]).read_text()
+          phone=Path(sys.argv[3]); bridge=Path(sys.argv[4])
           code=re.search(r"versionCode\s+(\d+)",gradle)
           name=re.search(r"versionName\s+'([^']+)'",gradle)
           host_version=re.search(r'^HOST_VERSION\s*=\s*["\']([^"\']+)["\']',host,re.M)
           if not code or not name or not host_version: raise SystemExit("Could not read app or host version")
+          if not phone.is_file() or not bridge.is_file(): raise SystemExit("APK files missing while creating update manifest")
+          sha=lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
           root="https://github.com/AndrewHorrison/mlbb-link-cloud-build"
           print(json.dumps({
             "versionCode":int(code.group(1)),
             "versionName":name.group(1),
             "hostVersion":host_version.group(1),
+            "phoneApkSha256":sha(phone),
+            "bridgeApkSha256":sha(bridge),
             "phoneApkUrl":root+"/releases/download/mlbb-link-beta/MLBB-Link-Phone-Controller.apk",
             "bridgeApkUrl":root+"/releases/download/mlbb-link-beta/MLBB-Link-Touch-Bridge.apk",
             "hostScriptUrl":root+"/releases/download/mlbb-link-beta/mlbb_link_host.py",
