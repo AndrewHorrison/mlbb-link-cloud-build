@@ -198,8 +198,8 @@ def update_java_skill_names(java_path: Path, keys: list[str], hero_names: list[s
         names = [n for n in names if n]
         if len(names) >= 3:
             parsed[index] = names[:3]
-        elif len(parsed[index]) != 3:
-            parsed[index] = ["SKILL 1", "SKILL 2", "ULTIMATE"]
+        elif len(parsed[index]) != 3 or all(n.strip().upper() in {"SKILL 1", "SKILL 2", "ULTIMATE"} for n in parsed[index]):
+            parsed[index] = [f"{hero_names[index]} Skill 1", f"{hero_names[index]} Skill 2", f"{hero_names[index]} Ultimate"]
     rows_text = ",\n".join("                {" + ", ".join(java_quote(v) for v in row[:3]) + "}" for row in parsed)
     source = source[:match.start()] + match.group(1) + "\n" + rows_text + match.group(3) + source[match.end():]
     if "private final String[][] skillDescriptions" not in source:
@@ -279,7 +279,7 @@ def make_details(folder: Path, hero_names: list[str], keys: list[str], skill_dat
             image = find_image(folder, f"skill_{key}_{i+1}")
             slots.append({
                 "slot": LABELS[i],
-                "name": item.get("name") or ("Skill 1" if i == 0 else "Skill 2" if i == 1 else "Ultimate"),
+                "name": item.get("name") or (f"{name} Skill 1" if i == 0 else f"{name} Skill 2" if i == 1 else f"{name} Ultimate"),
                 "description": item.get("description", ""),
                 "cooldownCost": item.get("cooldown", ""),
                 "iconResource": image.stem if image else None,
@@ -323,6 +323,49 @@ def make_sora_variants(folder: Path) -> None:
                       folder / f"sora_{form}_{i}.webp")
 
 
+def keep_adb_reverse_available(host_path: Path) -> None:
+    """Retry ADB reverse after the host starts so USB mode works when the phone is plugged in later."""
+    source = host_path.read_text()
+    if "def _maintain_adb_reverse(port: int)" not in source:
+        helper = r"""
+
+def _maintain_adb_reverse(port: int) -> None:
+    while True:
+        adb = shutil.which("adb")
+        if not adb:
+            with STATE_LOCK:
+                STATE["usb_status"] = "Waiting: install Android platform-tools (adb)"
+        else:
+            try:
+                result = subprocess.run([adb, "reverse", f"tcp:{port}", f"tcp:{port}"],
+                                        capture_output=True, text=True, timeout=3, check=False)
+                with STATE_LOCK:
+                    if result.returncode == 0:
+                        STATE["usb_status"] = "ADB reverse ready"
+                    else:
+                        STATE["usb_status"] = "Waiting for USB debugging authorization; connect phone and accept the prompt"
+            except Exception:
+                with STATE_LOCK:
+                    STATE["usb_status"] = "Waiting for an authorized USB device"
+        time.sleep(5.0)
+
+"""
+        marker = "def start_tcp_control_server(phone_port: int):"
+        if marker not in source:
+            raise RuntimeError("Cannot locate USB TCP server startup")
+        source = source.replace(marker, helper + "\n" + marker, 1)
+    start = source.find("    # ADB reverse works only after")
+    end = source.find("    return server", start)
+    if start >= 0 and end >= 0:
+        replacement = r"""    # Keep retrying; a phone is often connected after the PC host starts.
+    threading.Thread(target=_maintain_adb_reverse, args=(TCP_CONTROL_PORT,),
+                     name="mlbb-link-adb-reverse", daemon=True).start()
+"""
+        source = source[:start] + replacement + source[end:]
+    host_path.write_text(source)
+    print("Patched host to retry ADB reverse after late USB connection")
+
+
 def main() -> int:
     if len(sys.argv) != 3:
         print("usage: enrich_hero_skills.py <phone-app-root> <generated-mainactivity-java>", file=sys.stderr)
@@ -364,7 +407,8 @@ def main() -> int:
     print(f"Applied official active skill names for {actual_names} heroes")
     make_details(assets, heroes, keys, skill_data)
     make_sora_variants(assets)
-    print("Wrote structured hero_skill_details.json metadata and six Sora form icons")
+    keep_adb_reverse_available(app_root.parent / "host" / "mlbb_link_host.py")
+    print("Wrote skill metadata, all skill icons, six Sora form icons, and USB reconnect support")
     return 0
 
 
