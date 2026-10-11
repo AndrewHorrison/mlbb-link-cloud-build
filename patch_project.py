@@ -395,7 +395,7 @@ for gradle_file in [
     root / "waydroid-touch-bridge/app/build.gradle",
 ]:
     gradle_text = gradle_file.read_text()
-    gradle_text = gradle_text.replace("versionCode 2; versionName '0.2.0'", "versionCode 3; versionName '0.3.0'")
+    gradle_text = gradle_text.replace("versionCode 2; versionName '0.2.0'", "versionCode 4; versionName '0.4.0'")
     gradle_file.write_text(gradle_text)
 
 print("Patched hero skill art, IP discovery, clean HUD, LAN dashboard binding, and app version 0.3.0.")
