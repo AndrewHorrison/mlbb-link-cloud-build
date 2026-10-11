@@ -98,19 +98,27 @@ jobs:
           set -euo pipefail
           assets="source/mlbb-link/phone-controller/app/src/main/res/drawable-nodpi"
           mkdir -p "$assets"
-          base="https://mlbb.mezes.uz/img/heroes"
           for hero in nana dyrroth sora miya layla alucard tigreal gusion fanny; do
-            target="$assets/hero_$hero.webp"
+            ext=png
+            case "$hero" in
+              nana) url="https://raw.githubusercontent.com/Lara3924/Lara_Image/main/Nana%20-%20Hero051.png" ;;
+              dyrroth) url="https://raw.githubusercontent.com/Lara3924/Lara_Image/main/Dyrroth%20-%20Hero851.png" ;;
+              miya) url="https://raw.githubusercontent.com/Lara3924/Lara_Image/main/Miya%20-%20Hero011.png" ;;
+              layla) url="https://raw.githubusercontent.com/Lara3924/Lara_Image/main/Layla%20-%20Hero181.png" ;;
+              alucard) url="https://raw.githubusercontent.com/Lara3924/Lara_Image/main/Alucard%20-%20Hero071.png" ;;
+              tigreal) url="https://raw.githubusercontent.com/Lara3924/Lara_Image/main/Tigreal%20-%20Hero061.png" ;;
+              gusion) url="https://raw.githubusercontent.com/Lara3924/Lara_Image/main/Gusion%20-%20Hero561.png" ;;
+              fanny) url="https://raw.githubusercontent.com/Lara3924/Lara_Image/main/Fanny%20-%20Hero171.png" ;;
+              sora) url="https://mlbb.mezes.uz/img/heroes/sora-100.webp"; ext=webp ;;
+            esac
+            target="$assets/hero_$hero.$ext"
             tmp="$target.tmp"
-            if curl -fLsS --retry 2 --connect-timeout 10 "$base/$hero-100.webp" -o "$tmp"; then
-              mv "$tmp" "$target"
-              echo "Downloaded $hero portrait"
+            if curl -fLsS --retry 2 --connect-timeout 10 "$url" -o "$tmp"; then
+              mv "$tmp" "$target"; echo "Downloaded $hero portrait"
             else
-              rm -f "$tmp" "$target"
-              echo "Optional portrait unavailable for $hero; initials fallback will be used"
+              rm -f "$tmp" "$target"; echo "Portrait unavailable for $hero; initials fallback will be used"
             fi
           done
-
       - name: Bundle authentic battle-spell artwork
         run: |
           set -euo pipefail
