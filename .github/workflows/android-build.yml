@@ -413,6 +413,37 @@ jobs:
           cp source/mlbb-link/waydroid-touch-bridge/app/build/outputs/apk/debug/app-debug.apk output/MLBB-Link-Touch-Bridge.apk
           cp source/mlbb-link/phone-controller/app/build/outputs/apk/debug/app-debug.apk output/MLBB-Link-Phone-Controller.apk
           cp source/mlbb-link/host/mlbb_link_host.py output/mlbb_link_host.py
+          cat > output/RELEASE_NOTES.md <<'NOTES'
+          # MLBB Link v0.11.0 Beta
+
+          A community beta for connecting an Android controller to the MLBB Link host on a PC / Waydroid setup.
+
+          ## What's new
+          - PC dashboard connection center with Overview, Wi-Fi, USB, Bluetooth Beta, Dual Connection, and Updates tabs.
+          - Wi-Fi instructions show the PC LAN address and UDP controller port (28741), with copy-IP support.
+          - USB troubleshooting for Android USB debugging, ADB authorization, and ADB reverse.
+          - Bluetooth Beta pairing and RFCOMM setup guidance. Bluetooth is experimental and may not work on every device.
+          - Dual Connection setup guide: intended USB-preferred operation with Wi-Fi fallback when the phone sender detects a USB transport failure.
+          - Versioned update manifest for the phone controller, Waydroid touch bridge, and PC host.
+          - PC host script and updated source bundle are included as release assets.
+          - Android versionName 0.11.0 / versionCode 13.
+
+          ## Release assets
+          - MLBB-Link-Phone-Controller.apk — Android controller app.
+          - MLBB-Link-Touch-Bridge.apk — Android / Waydroid touch bridge.
+          - MLBB-Link-Debug.keystore — retained beta signing key for compatible in-place beta updates; keep private and do not redistribute publicly.
+          - mlbb_link_host.py — Python PC host/dashboard.
+          - MLBB-Link-Updated-Source.tar.gz — updated project source.
+
+          ## Upgrade notes
+          Back up your existing setup before testing. Android updates require a compatible package ID and signing key, and Android will ask you to approve installation. Stop the PC host before replacing its Python script, then restart it.
+
+          ## Known limitations
+          - Bluetooth and Dual Connection failover require real-device testing; a brief input interruption can occur when a cable is unplugged.
+          - The new PC tabs provide setup instructions and status diagnostics; choose the actual transport mode in the phone controller.
+          - Test in Practice Mode first, not a ranked match.
+          - This is an independent community project and is not affiliated with or endorsed by Moonton.
+          NOTES
           tar -czf output/MLBB-Link-Updated-Source.tar.gz -C source mlbb-link
           cd output
           sha256sum MLBB-Link-Touch-Bridge.apk MLBB-Link-Phone-Controller.apk > SHA256SUMS.txt
@@ -438,7 +469,7 @@ jobs:
           if gh release view mlbb-link-beta >/dev/null 2>&1; then
             gh release upload mlbb-link-beta "$phone" "$bridge" "$keystore" "$host" "$source_bundle" --clobber
           else
-            gh release create mlbb-link-beta "$phone" "$bridge" "$keystore" "$host" "$source_bundle" --prerelease --title "MLBB Link Beta" --notes "Rolling prerelease builds. Includes phone controller, Waydroid bridge, and PC host. Bluetooth is experimental; test USB/Dual failover in practice mode."
+            gh release create mlbb-link-beta "$phone" "$bridge" "$keystore" "$host" "$source_bundle" --prerelease --title "MLBB Link v0.11.0 Beta" --notes-file output/RELEASE_NOTES.md
           fi
           mkdir -p updates
           python3 - source/mlbb-link/phone-controller/app/build.gradle source/mlbb-link/host/mlbb_link_host.py > updates/latest.json <<'PYCODE'
