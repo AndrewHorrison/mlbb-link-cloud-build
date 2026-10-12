@@ -449,7 +449,7 @@ jobs:
           - **Manual cooldown reduction:** tap the CDR chip to cycle 0%, 10%, 20%, 30%, and 40%. Cooldown countdowns use the selected estimate, saved locally; this is not live game telemetry.
           - Bluetooth Beta pairing and RFCOMM setup guidance. Bluetooth is experimental and may not work on every device.
           - Low-latency sender coalesces old joystick/aim movement samples and resolves the PC IP once instead of for every packet.
-          - App launcher name and HUD identify the version as MLBB Link v0.14.0.
+          - Launcher label and HUD show MLBB Link v0.14.0; the PC dashboard and update manifest agree on the version.
           - No browser page is opened for the APK download. Android still requires user approval; if needed, MLBB Link opens Android's per-app install permission settings.
           - In-app updater still downloads the APK inside MLBB Link with progress, verifies SHA-256, then opens Android's native installer.
           - PC host script and updated source bundle are included as release assets.
@@ -463,10 +463,10 @@ jobs:
           - MLBB-Link-Updated-Source.tar.gz — updated project source.
 
           ## Upgrade notes
-The v0.14.0 build uses the same repository-scoped GitHub Actions signing-key cache established by v0.13.0, so Android should accept it as an in-place update and retain local settings. If Android reports a signature mismatch, do not uninstall immediately if you need to preserve settings; share the exact error first. Android still requires user approval to install updates. Stop and restart the PC host after replacing its Python script.
+          The v0.14.0 build is configured to reuse the repository-scoped GitHub Actions signing-key cache established by v0.13.0. Android should accept this as an in-place update and retain local settings. If Android reports a signature mismatch, do not uninstall immediately if you need to preserve settings; share the exact error first. Android still requires user approval to install updates. Stop and restart the PC host after replacing its Python script.
 
           ## Known limitations
-          - The fix is CI-built but still needs on-device verification in Practice Mode. Bluetooth and Dual Connection failover require real-device testing; a brief input interruption can occur when a cable is unplugged.
+          - CI verifies source patching and compilation, but the editor and cooldown estimator still need real-device testing. CDR is only an estimate; it does not inspect active items, buffs, or live game state. Bluetooth and Dual Connection failover also require real-device testing; a brief interruption can occur when a cable is unplugged.
           - The new PC tabs provide setup instructions and status diagnostics; choose the actual transport mode in the phone controller.
           - Test in Practice Mode first, not a ranked match.
           - This is an independent community project and is not affiliated with or endorsed by Moonton.
