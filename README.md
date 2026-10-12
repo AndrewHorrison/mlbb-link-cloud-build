@@ -1,27 +1,29 @@
-# MLBB Link v0.14.0
+# MLBB Link v0.14.1
 
 A community controller for Mobile Legends: Bang Bang using an Android phone controller, a Python PC host, and the Waydroid touch bridge.
 
-## v0.14.0 — custom HUD editor, cooldown reduction presets, and input fixes
+## v0.14.1 — custom HUD editor, cooldown reduction presets, and input fixes
 
 - **Skill taps:** quick taps now use a normal tap event; the app starts a continuous aim stroke only after your finger intentionally moves. This targets the issue where Skill 1 and Skill 2 could fail while Ultimate worked.
 - **Lower input latency:** the Android sender caches the PC IP resolution and coalesces old joystick/aim movement samples instead of letting a slow queue build up.
 - **HUD refresh:** added a semi-transparent minimap panel and larger skill hit areas, inspired by the custom HUD discussion linked in the issue.
-- **Visible version:** launcher label and controller HUD show **MLBB Link v0.14.0**.
+- **Visible version:** launcher label and controller HUD show **MLBB Link v0.14.1**.
 - **Custom HUD editor:** tap **EDIT HUD**, drag the joystick, skill buttons, attack, battle spell, Recall, Regen, microphone, or skill-point control, then tap **SAVE HUD**. Press and hold **SAVE HUD** for about 0.7 seconds to restore defaults. Positions are saved locally on the phone.
 - **Manual cooldown reduction (CDR):** tap the **CDR** chip to cycle 0%, 10%, 20%, 30%, and 40%. The visible skill cooldown estimates use the selected reduction and remember it locally. It does not read the current match, equipment, buffs, or server state.
 - The in-app updater keeps its progress display and SHA-256 verification before handing the APK to Android's installer.
+- **Native APK installer fix:** passes a `content://` URI using `FileProvider`, explicit APK MIME type, `ClipData`, and read-grant/activity flags. It tries `ACTION_INSTALL_PACKAGE` and falls back to `ACTION_VIEW` when an OEM/Waydroid image lacks the first handler.
+- **Android 8+ install permission:** the updater checks `canRequestPackageInstalls()`, opens the per-app unknown-app setting when needed, saves the verified APK path, and resumes installation when the permission is granted. Android's final confirmation remains required.
 - PC dashboard includes Overview, Wi-Fi, USB, Bluetooth Beta, Dual Connection, and Updates tabs.
-- Current app version: **versionName 0.14.0 / versionCode 16**.
+- Current app version: **versionName 0.14.1 / versionCode 17**.
 
 ## Upgrade notes
 
-The v0.14.0 build is configured to reuse the repository-scoped signing-key cache established by v0.13.0, so Android should accept this as an in-place update and retain app settings. If Android reports a signature mismatch, do not uninstall immediately if you need to preserve settings; share the exact error first. The updater verifies the APK's SHA-256 checksum and Android still asks you to approve installation.
+The v0.14.1 build is configured to reuse the repository-scoped signing-key cache established by v0.13.0, so Android should accept this as an in-place update and retain app settings. If Android reports a signature mismatch, do not uninstall immediately if you need to preserve settings; share the exact error first. The updater verifies the APK's SHA-256 checksum and Android still asks you to approve installation.
 
 
 ## Install and connect
 
-1. Download the phone controller and Waydroid bridge APKs from the [latest release](https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/tag/v0.14.0).
+1. Download the phone controller and Waydroid bridge APKs from the [latest release](https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/tag/v0.14.1).
 2. Run `python3 mlbb_link_host.py` on Bazzite, preferably directly on the host rather than in Distrobox/Toolbx.
 3. Install and enable the Touch Bridge accessibility service in Waydroid.
 4. Put the PC and phone on the same trusted Wi-Fi, enter the PC LAN IPv4 address into the controller, and tap **LINK**.
@@ -36,15 +38,15 @@ The v0.14.0 build is configured to reuse the repository-scoped signing-key cache
 
 ## Limits
 
-- This build is CI-compiled but still needs physical-device testing. I can't verify the skill fix against your particular device/game layout from CI alone.
+- The v0.14.1 updater compiles in CI, but installer behavior still needs testing on real Android and Waydroid devices because OEM Package Installer and Settings handlers vary.
 - Button placements can differ from your in-game custom HUD. The controller includes larger touch targets and a stylized minimap, but it is not an exact copy of an MLBB game screen and does not read the live match state.
 - Cooldowns, hero state, and Sora form helpers are estimates, not authoritative game telemetry.
 - Independent community project, not affiliated with or endorsed by Moonton.
 
 ## Links
 
-- [Download MLBB Link v0.14.0](https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/tag/v0.14.0)
-- [Phone Controller APK](https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/v0.14.0/MLBB-Link-Phone-Controller.apk)
-- [Waydroid Touch Bridge APK](https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/v0.14.0/MLBB-Link-Touch-Bridge.apk)
+- [Download MLBB Link v0.14.1](https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/tag/v0.14.1)
+- [Phone Controller APK](https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/v0.14.1/MLBB-Link-Phone-Controller.apk)
+- [Waydroid Touch Bridge APK](https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/v0.14.1/MLBB-Link-Touch-Bridge.apk)
 - [Build workflow](https://github.com/AndrewHorrison/mlbb-link-cloud-build/actions/workflows/android-build.yml)
 - Update manifest: `updates/latest.json`
