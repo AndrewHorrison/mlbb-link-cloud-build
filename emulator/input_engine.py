@@ -19,6 +19,7 @@ import struct
 import threading
 import time
 from typing import Any
+from pathlib import Path
 
 from profiles import load_profile, load_settings, profile_path, settings_path, user_config_dir
 
@@ -461,7 +462,10 @@ class KeyboardCapture:
 
 def run_server(args: argparse.Namespace) -> int:
     settings = load_settings(args.settings)
-    profile = load_profile(args.profile)
+    profile_file = Path(args.profile).expanduser()
+    profile = load_profile(profile_file)
+    profile_mtime = profile_file.stat().st_mtime_ns
+    last_profile_check = time.monotonic()
     screen = profile["screen"]
     if args.screen_width:
         screen["width"] = int(args.screen_width)
@@ -503,6 +507,22 @@ def run_server(args: argparse.Namespace) -> int:
         LOG.info("Input engine listening on %s:%d (backend=%s). It is not exposed to the LAN.",
                  args.bind, args.port, args.backend)
         while not stop.is_set():
+            now_loop = time.monotonic()
+            if now_loop - last_profile_check >= 0.5:
+                last_profile_check = now_loop
+                try:
+                    changed_mtime = profile_file.stat().st_mtime_ns
+                    if changed_mtime != profile_mtime:
+                        updated_profile = load_profile(profile_file)
+                        backend.release_all()
+                        profile = updated_profile
+                        engine = InputEngine(updated_profile, backend)
+                        if keyboard is not None:
+                            keyboard.engine = engine
+                        profile_mtime = changed_mtime
+                        LOG.info("Reloaded saved mapping profile %r", profile.get("name"))
+                except Exception as exc:
+                    LOG.warning("Could not reload saved mapping profile; keeping the last valid profile: %s", exc)
             now_ready = time.monotonic()
             if now_ready - last_ready_refresh >= 0.75:
                 try:
