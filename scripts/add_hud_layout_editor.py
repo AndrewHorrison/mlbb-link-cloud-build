@@ -316,8 +316,8 @@ def main() -> int:
     s = once(s, 'if (inside(x, y, 0.485f, 0.815f, 0.055f)) return "mic";',
              'if (inside(x, y, micX, micY, 0.055f)) return "mic";',
              "microphone hit target")
-    s = once(s, "            drawShopButton(canvas);\n            drawBottomHints(canvas);",
-             "            drawShopButton(canvas);\n            drawCdrButton(canvas);\n            drawHudEditorButton(canvas);\n            if (hudEditMode) drawHudEditOverlay(canvas);\n            drawBottomHints(canvas);",
+    s = once(s, "            drawBottomHints(canvas);",
+             "            drawCdrButton(canvas);\n            drawHudEditorButton(canvas);\n            if (hudEditMode) drawHudEditOverlay(canvas);\n            drawBottomHints(canvas);",
              "HUD editor and CDR drawing")
     s = once(s,
         '        private long currentSkillCooldown(int skill) {\n            if (heroIndex == 2 && soraForm == 1) return new long[]{6500, 9000, 28000}[skill];\n            if (heroIndex == 2 && soraForm == 2) return new long[]{8000, 11000, 32000}[skill];\n            return cooldowns[heroIndex][skill];\n        }',
