@@ -1,0 +1,18 @@
+{
+  "version": "0.15.0",
+  "name": "MLBB Link Emulator Tools",
+  "schemaVersion": 1,
+  "files": [
+    "launcher.py",
+    "overlay.py",
+    "input_engine.py",
+    "profiles.py",
+    "updater.py",
+    "profile_default.json",
+    "requirements.txt",
+    "requirements-keyboard.txt",
+    "install.sh",
+    "README.md",
+    "package.json"
+  ]
+}
