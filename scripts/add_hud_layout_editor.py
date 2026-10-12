@@ -52,23 +52,11 @@ def main() -> int:
         "        private final int[] cdrPresets = {0, 10, 20, 30, 40};",
         "HUD editor and CDR state")
 
-    ctor = """        ControllerView(Context context) {
-            super(context);
-            setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-            setFocusable(true);
-            loadSkillArt();
-        }"""
-    ctor_new = """        ControllerView(Context context) {
-            super(context);
-            setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-            setFocusable(true);
-            loadSkillArt();
-            loadHudLayout();
-        }"""
-    if ctor in s:
-        s = once(s, ctor, ctor_new, "HUD layout load")
-    elif "            loadHudLayout();" not in s:
-        raise SystemExit("ControllerView constructor marker missing")
+    if "            loadHudLayout();" not in s:
+        s = once(s, "            loadSkillArt();",
+                 "            loadSkillArt();\n            loadHudLayout();",
+                 "HUD layout load")
+
 
     methods = r"""
         private void loadHudLayout() {
