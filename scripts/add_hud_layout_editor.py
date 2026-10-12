@@ -22,7 +22,6 @@ def main() -> int:
 
     # These positions are normalized to the current view dimensions and persisted per device.
     positions = (
-        ("joyX", "0.165f, joyY = 0.735f"),
         ("attackX", "0.925f, attackY = 0.785f"),
         ("skill1X", "0.765f, skill1Y = 0.700f"),
         ("skill2X", "0.845f, skill2Y = 0.615f"),
