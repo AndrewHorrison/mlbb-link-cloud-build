@@ -353,7 +353,7 @@ jobs:
           print(f"Verified {len(heroes)} hero entries, {len(heroes)*3} skill icons, skill details, and all Sora form icons")
           PYCODE
 
-      - name: Fix skill tap/aim, reduce latency, and update HUD for v0.14.0
+      - name: Fix APK installer and update HUD/input features for v0.14.1
         run: |
           set -euo pipefail
           python3 scripts/enhance_pc_dashboard.py source/mlbb-link
@@ -372,7 +372,17 @@ jobs:
           grep -q 'drawHudEditorButton(canvas)' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
           grep -q 'drawCdrButton(canvas)' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
           grep -q 'private void saveHudLayout()' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
-          grep -q 'android:label="MLBB Link v0.14.0"' source/mlbb-link/phone-controller/app/src/main/AndroidManifest.xml
+          grep -q 'private void installApk(File file)' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
+          grep -q 'canRequestPackageInstalls()' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
+          grep -q 'Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
+          grep -q 'setDataAndType(apkUri, APK_MIME_TYPE)' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
+          grep -q 'Intent.FLAG_ACTIVITY_NEW_TASK' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
+          grep -q 'Intent.FLAG_ACTIVITY_CLEAR_TOP' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
+          grep -q 'android.permission.REQUEST_INSTALL_PACKAGES' source/mlbb-link/phone-controller/app/src/main/AndroidManifest.xml
+          grep -q 'android:authorities="${applicationId}.fileprovider"' source/mlbb-link/phone-controller/app/src/main/AndroidManifest.xml
+          grep -q 'android:resource="@xml/file_paths"' source/mlbb-link/phone-controller/app/src/main/AndroidManifest.xml
+          grep -q 'path="updates/"' source/mlbb-link/phone-controller/app/src/main/res/xml/file_paths.xml
+          grep -q 'android:label="MLBB Link v0.14.1"' source/mlbb-link/phone-controller/app/src/main/AndroidManifest.xml
           grep -q 'FileProvider' source/mlbb-link/phone-controller/app/src/main/AndroidManifest.xml
           test -s source/mlbb-link/phone-controller/app/src/main/res/xml/file_paths.xml
           python3 - <<'PYCODE'
@@ -437,7 +447,7 @@ jobs:
           cp source/mlbb-link/phone-controller/app/build/outputs/apk/debug/app-debug.apk output/MLBB-Link-Phone-Controller.apk
           cp source/mlbb-link/host/mlbb_link_host.py output/mlbb_link_host.py
           cat > output/RELEASE_NOTES.md <<'NOTES'
-          # MLBB Link v0.14.0
+          # MLBB Link v0.14.1
 
           A community release for connecting an Android controller to the MLBB Link host on a PC / Waydroid setup. This release adds an in-app Android updater.
 
@@ -449,11 +459,14 @@ jobs:
           - **Manual cooldown reduction:** tap the CDR chip to cycle 0%, 10%, 20%, 30%, and 40%. Cooldown countdowns use the selected estimate, saved locally; this is not live game telemetry.
           - Bluetooth Beta pairing and RFCOMM setup guidance. Bluetooth is experimental and may not work on every device.
           - Low-latency sender coalesces old joystick/aim movement samples and resolves the PC IP once instead of for every packet.
-          - Launcher label and HUD show MLBB Link v0.14.0; the PC dashboard and update manifest agree on the version.
+          - Launcher label and HUD show MLBB Link v0.14.1; the PC dashboard and update manifest agree on the version.
           - No browser page is opened for the APK download. Android still requires user approval; if needed, MLBB Link opens Android's per-app install permission settings.
           - In-app updater still downloads the APK inside MLBB Link with progress, verifies SHA-256, then opens Android's native installer.
+          - **Installer fix:** pass Android Package Installer a content URI, explicit APK MIME type, ClipData, and read permission; try ACTION_INSTALL_PACKAGE with ACTION_VIEW compatibility for Waydroid/OEM images.
+          - **Android 8+ permission flow:** check canRequestPackageInstalls(), open per-app install-source settings when needed, save the verified pending APK across Activity recreation, and continue automatically after permission is granted.
+          - Installer launch is restricted to the foreground Activity, with clear error feedback when Package Installer is disabled or unavailable.
           - PC host script and updated source bundle are included as release assets.
-          - Android versionName 0.14.0 / versionCode 16.
+          - Android versionName 0.14.1 / versionCode 16.
 
           ## Release assets
           - MLBB-Link-Phone-Controller.apk — Android controller app.
@@ -463,10 +476,10 @@ jobs:
           - MLBB-Link-Updated-Source.tar.gz — updated project source.
 
           ## Upgrade notes
-          The v0.14.0 build is configured to reuse the repository-scoped GitHub Actions signing-key cache established by v0.13.0. Android should accept this as an in-place update and retain local settings. If Android reports a signature mismatch, do not uninstall immediately if you need to preserve settings; share the exact error first. Android still requires user approval to install updates. Stop and restart the PC host after replacing its Python script.
+          The v0.14.1 build is configured to reuse the repository-scoped GitHub Actions signing-key cache established by v0.13.0. Android should accept this as an in-place update and retain local settings. If Android reports a signature mismatch, do not uninstall immediately if you need to preserve settings; share the exact error first. Android still requires user approval to install updates. Stop and restart the PC host after replacing its Python script.
 
           ## Known limitations
-          - CI verifies source patching and compilation, but the editor and cooldown estimator still need real-device testing. CDR is only an estimate; it does not inspect active items, buffs, or live game state. Bluetooth and Dual Connection failover also require real-device testing; a brief interruption can occur when a cable is unplugged.
+          - CI verifies source patching and compilation, but installer behavior still needs validation on physical Android devices and Waydroid because OEM installer dialogs and Settings pages vary. The editor and cooldown estimator also need real-device testing; CDR does not inspect live items, buffs, or game state. Bluetooth and Dual Connection failover can briefly interrupt input.
           - The new PC tabs provide setup instructions and status diagnostics; choose the actual transport mode in the phone controller.
           - Test in Practice Mode first, not a ranked match.
           - This is an independent community project and is not affiliated with or endorsed by Moonton.
