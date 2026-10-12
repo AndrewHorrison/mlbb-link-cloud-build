@@ -20,7 +20,7 @@ import threading
 import time
 from typing import Any
 
-from profiles import load_profile, load_settings, profile_path, settings_path
+from profiles import load_profile, load_settings, profile_path, settings_path, user_config_dir
 
 LOG = logging.getLogger("mlbb-link-emulator")
 MAX_PACKET_BYTES = 8192
@@ -487,6 +487,10 @@ def run_server(args: argparse.Namespace) -> int:
     receiver.bind((args.bind, args.port))
     receiver.settimeout(0.05)
     stop = threading.Event()
+    ready_marker = user_config_dir() / "engine.ready"
+    ready_marker.parent.mkdir(parents=True, exist_ok=True)
+    ready_marker.write_text(json.dumps({"pid": os.getpid(), "port": args.port, "started": time.time()}), encoding="utf-8")
+    last_ready_refresh = time.monotonic()
 
     def stop_handler(_signum: int, _frame: Any) -> None:
         stop.set()
@@ -499,6 +503,13 @@ def run_server(args: argparse.Namespace) -> int:
         LOG.info("Input engine listening on %s:%d (backend=%s). It is not exposed to the LAN.",
                  args.bind, args.port, args.backend)
         while not stop.is_set():
+            now_ready = time.monotonic()
+            if now_ready - last_ready_refresh >= 0.75:
+                try:
+                    os.utime(ready_marker, None)
+                except OSError:
+                    pass
+                last_ready_refresh = now_ready
             try:
                 payload, address = receiver.recvfrom(MAX_PACKET_BYTES + 1)
             except socket.timeout:
@@ -542,6 +553,12 @@ def run_server(args: argparse.Namespace) -> int:
         if keyboard is not None:
             keyboard.close()
         backend.close()
+        try:
+            marker_data = json.loads(ready_marker.read_text(encoding="utf-8"))
+            if int(marker_data.get("pid", -1)) == os.getpid():
+                ready_marker.unlink(missing_ok=True)
+        except (OSError, ValueError, json.JSONDecodeError):
+            pass
     return 0
 
 
