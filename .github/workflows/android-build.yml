@@ -353,17 +353,23 @@ jobs:
           print(f"Verified {len(heroes)} hero entries, {len(heroes)*3} skill icons, skill details, and all Sora form icons")
           PYCODE
 
-      - name: Fix APK installer and update HUD/input features for v0.14.1
+      - name: Build Android APKs and integrate v0.15.0 emulator tools
         run: |
           set -euo pipefail
           python3 scripts/enhance_pc_dashboard.py source/mlbb-link
           python3 scripts/enable_in_app_updates.py source/mlbb-link
           python3 scripts/fix_skill_connection_ui.py source/mlbb-link
           python3 scripts/add_hud_layout_editor.py source/mlbb-link
-          python3 -m py_compile source/mlbb-link/host/mlbb_link_host.py scripts/enhance_pc_dashboard.py scripts/enable_in_app_updates.py scripts/fix_skill_connection_ui.py scripts/add_hud_layout_editor.py
+          python3 scripts/integrate_emulator_engine.py source/mlbb-link
+          python3 -m py_compile source/mlbb-link/host/mlbb_link_host.py scripts/enhance_pc_dashboard.py scripts/enable_in_app_updates.py scripts/fix_skill_connection_ui.py scripts/add_hud_layout_editor.py scripts/integrate_emulator_engine.py
+          python3 -m py_compile emulator/profiles.py emulator/input_engine.py emulator/overlay.py emulator/updater.py emulator/launcher.py emulator/tests/test_profiles.py emulator/tests/test_updater.py
+          PYTHONPATH=emulator python3 -m unittest discover -s emulator/tests -v
           grep -q 'panel-usb' source/mlbb-link/host/mlbb_link_host.py
           grep -q 'panel-bluetooth' source/mlbb-link/host/mlbb_link_host.py
           grep -q 'panel-dual' source/mlbb-link/host/mlbb_link_host.py
+          grep -q '_MLBB_EMULATOR_READY' source/mlbb-link/host/mlbb_link_host.py
+          grep -q 'Input routed to emulator engine' source/mlbb-link/host/mlbb_link_host.py
+          grep -q '127.0.0.1", 28743' source/mlbb-link/host/mlbb_link_host.py
           grep -q 'DOWNLOAD IN APP' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
           grep -q 'aimGestureStarted' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
           grep -q 'pendingJoystickMove' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
@@ -382,7 +388,7 @@ jobs:
           grep -q 'android:authorities="${applicationId}.fileprovider"' source/mlbb-link/phone-controller/app/src/main/AndroidManifest.xml
           grep -q 'android:resource="@xml/file_paths"' source/mlbb-link/phone-controller/app/src/main/AndroidManifest.xml
           grep -q 'path="updates/"' source/mlbb-link/phone-controller/app/src/main/res/xml/file_paths.xml
-          grep -q 'android:label="MLBB Link v0.14.1"' source/mlbb-link/phone-controller/app/src/main/AndroidManifest.xml
+          grep -q 'android:label="MLBB Link v0.15.0"' source/mlbb-link/phone-controller/app/src/main/AndroidManifest.xml
           grep -q 'FileProvider' source/mlbb-link/phone-controller/app/src/main/AndroidManifest.xml
           test -s source/mlbb-link/phone-controller/app/src/main/res/xml/file_paths.xml
           python3 - <<'PYCODE'
@@ -447,7 +453,7 @@ jobs:
           cp source/mlbb-link/phone-controller/app/build/outputs/apk/debug/app-debug.apk output/MLBB-Link-Phone-Controller.apk
           cp source/mlbb-link/host/mlbb_link_host.py output/mlbb_link_host.py
           cat > output/RELEASE_NOTES.md <<'NOTES'
-          # MLBB Link v0.14.1
+          # MLBB Link v0.15.0
 
           A community release for connecting an Android controller to the MLBB Link host on a PC / Waydroid setup. This release adds an in-app Android updater.
 
@@ -459,14 +465,18 @@ jobs:
           - **Manual cooldown reduction:** tap the CDR chip to cycle 0%, 10%, 20%, 30%, and 40%. Cooldown countdowns use the selected estimate, saved locally; this is not live game telemetry.
           - Bluetooth Beta pairing and RFCOMM setup guidance. Bluetooth is experimental and may not work on every device.
           - Low-latency sender coalesces old joystick/aim movement samples and resolves the PC IP once instead of for every packet.
-          - Launcher label and HUD show MLBB Link v0.14.1; the PC dashboard and update manifest agree on the version.
+          - Launcher label and HUD show MLBB Link v0.15.0; the PC dashboard and update manifest agree on the version.
           - No browser page is opened for the APK download. Android still requires user approval; if needed, MLBB Link opens Android's per-app install permission settings.
           - In-app updater still downloads the APK inside MLBB Link with progress, verifies SHA-256, then opens Android's native installer.
           - **Installer fix:** pass Android Package Installer a content URI, explicit APK MIME type, ClipData, and read permission; try ACTION_INSTALL_PACKAGE with ACTION_VIEW compatibility for Waydroid/OEM images.
           - **Android 8+ permission flow:** check canRequestPackageInstalls(), open per-app install-source settings when needed, save the verified pending APK across Activity recreation, and continue automatically after permission is granted.
           - Installer launch is restricted to the foreground Activity, with clear error feedback when Package Installer is disabled or unavailable.
-          - PC host script and updated source bundle are included as release assets.
-          - Android versionName 0.14.1 / versionCode 17.
+          - **Linux emulator companion:** separately versioned MLBB-Link-Emulator-Tools.tar.gz includes the PySide6 drag-to-map editor, profile JSON, uinput multi-touch engine, installer and auto-updater.
+          - **Exclusive input routing:** phone packets still arrive at UDP 28741. The existing host defaults to the Waydroid bridge; when the user starts the emulator engine, validated events route to loopback UDP 28743 only and do not also reach the bridge.
+          - **User-space update flow:** the desktop launcher checks updates/emulator-latest.json, asks before updating, verifies SHA-256, validates the archive file list and replaces only whitelisted user-owned files.
+          - Runtime selection, Play Store/GApps, one-at-a-time ARM translation, NVIDIA/Waydroid caveats, installation, uinput permissions and test steps are documented in emulator/README.md.
+          - PC host script, updated Android source, and emulator tools bundle are included as release assets.
+          - Android versionName 0.15.0 / versionCode 18; emulator tools version 0.15.0.
 
           ## Release assets
           - MLBB-Link-Phone-Controller.apk — Android controller app.
@@ -476,15 +486,19 @@ jobs:
           - MLBB-Link-Updated-Source.tar.gz — updated project source.
 
           ## Upgrade notes
-          The v0.14.1 build is configured to reuse the repository-scoped GitHub Actions signing-key cache established by v0.13.0. Android should accept this as an in-place update and retain local settings. If Android reports a signature mismatch, do not uninstall immediately if you need to preserve settings; share the exact error first. Android still requires user approval to install updates. Stop and restart the PC host after replacing its Python script.
+          The v0.15.0 build is configured to reuse the repository-scoped GitHub Actions signing-key cache established by v0.13.0. Android should accept this as an in-place update and retain local settings. If Android reports a signature mismatch, do not uninstall immediately if you need to preserve settings; share the exact error first. Android still requires user approval to install updates. Stop and restart the PC host after replacing its Python script.
 
           ## Known limitations
-          - CI verifies source patching and compilation, but installer behavior still needs validation on physical Android devices and Waydroid because OEM installer dialogs and Settings pages vary. The editor and cooldown estimator also need real-device testing; CDR does not inspect live items, buffs, or game state. Bluetooth and Dual Connection failover can briefly interrupt input.
+          - CI verifies the sources and builds both APKs, but the new Linux uinput/Wayland path still needs testing on the target laptop and Android runtime. The official Bazzite guide warns Waydroid has NVIDIA limitations; ARM/GApps compatibility and Play certification are not guaranteed.
+          - A compositor may not route host-level virtual touchscreen events to an Android guest. No sub-5ms end-to-end latency guarantee is made. Test with a harmless app and MLBB Practice Mode first.
+          - The cooldown estimator is manual and does not inspect live items, buffs or match state. Bluetooth and USB/Wi-Fi failover also require real-device testing.
           - The new PC tabs provide setup instructions and status diagnostics; choose the actual transport mode in the phone controller.
           - Test in Practice Mode first, not a ranked match.
           - This is an independent community project and is not affiliated with or endorsed by Moonton.
           NOTES
           tar -czf output/MLBB-Link-Updated-Source.tar.gz -C source mlbb-link
+          tar -czf output/MLBB-Link-Emulator-Tools.tar.gz -C emulator launcher.py overlay.py input_engine.py profiles.py updater.py profile_default.json requirements.txt requirements-keyboard.txt install.sh README.md package.json
+          test -s output/MLBB-Link-Emulator-Tools.tar.gz
           cd output
           sha256sum MLBB-Link-Touch-Bridge.apk MLBB-Link-Phone-Controller.apk > SHA256SUMS.txt
           zip -q MLBB-Link-APKs.zip MLBB-Link-Touch-Bridge.apk MLBB-Link-Phone-Controller.apk SHA256SUMS.txt
@@ -504,8 +518,10 @@ jobs:
           keystore="$RUNNER_TEMP/MLBB-Link-Debug.keystore"
           host="output/mlbb_link_host.py"
           source_bundle="output/MLBB-Link-Updated-Source.tar.gz"
+          emulator_bundle="output/MLBB-Link-Emulator-Tools.tar.gz"
           test -s "$host"
           test -s "$source_bundle"
+          test -s "$emulator_bundle"
           release_tag="$(python3 - source/mlbb-link/phone-controller/app/build.gradle <<'PYTAG'
           import re,sys
           from pathlib import Path
@@ -516,11 +532,16 @@ jobs:
           PYTAG
           )"
           release_title="MLBB Link ${release_tag}"
+          emulator_version="$(python3 -c 'import json; print(json.load(open("emulator/package.json"))["version"])')"
+          if [[ "$emulator_version" != "${release_tag#v}" ]]; then
+            echo "Emulator tools version $emulator_version does not match app release $release_tag."
+            exit 1
+          fi
           if gh release view "${release_tag}" >/dev/null 2>&1; then
-            gh release upload "${release_tag}" "$phone" "$bridge" "$host" "$source_bundle" --clobber
+            gh release upload "${release_tag}" "$phone" "$bridge" "$host" "$source_bundle" "$emulator_bundle" --clobber
             gh release edit "${release_tag}" --title "${release_title}" --notes-file output/RELEASE_NOTES.md
           else
-            gh release create "${release_tag}" "$phone" "$bridge" "$host" "$source_bundle" --title "${release_title}" --notes-file output/RELEASE_NOTES.md
+            gh release create "${release_tag}" "$phone" "$bridge" "$host" "$source_bundle" "$emulator_bundle" --title "${release_title}" --notes-file output/RELEASE_NOTES.md
           fi
           release_id="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${release_tag}" --jq '.id')"
           # Every version is a normal public release, never a GitHub prerelease.
@@ -556,9 +577,27 @@ jobs:
             "releaseUrl":root+"/releases/tag/v"+name.group(1)
           },indent=2))
           PYCODE
+          python3 - emulator/package.json output/MLBB-Link-Emulator-Tools.tar.gz > updates/emulator-latest.json <<'PYEMU'
+          import hashlib,json,sys
+          from pathlib import Path
+          package=json.loads(Path(sys.argv[1]).read_text())
+          archive=Path(sys.argv[2])
+          if not archive.is_file() or not archive.stat().st_size: raise SystemExit("Emulator tools archive is missing")
+          version=package.get("version")
+          if not version: raise SystemExit("Emulator package version is missing")
+          sha=hashlib.sha256(archive.read_bytes()).hexdigest()
+          root="https://github.com/AndrewHorrison/mlbb-link-cloud-build"
+          print(json.dumps({
+            "schemaVersion":1,
+            "version":version,
+            "sha256":sha,
+            "assetUrl":root+"/releases/download/v"+version+"/MLBB-Link-Emulator-Tools.tar.gz",
+            "releaseUrl":root+"/releases/tag/v"+version
+          },indent=2))
+          PYEMU
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add updates/latest.json
+          git add updates/latest.json updates/emulator-latest.json
           if [[ "$GITHUB_REF_NAME" == "main" ]] && ! git diff --cached --quiet; then
             git commit -m "chore: refresh v${release_tag#v} update manifest [skip ci]"
             # A README or cache-workflow commit may have landed while Android was building.
