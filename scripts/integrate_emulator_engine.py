@@ -58,9 +58,43 @@ def main() -> int:
     if not host_path.is_file():
         raise SystemExit(f"Host script not found: {host_path}")
     host = host_path.read_text(encoding="utf-8")
-    for statement in ("import json", "import os", "import socket", "import time"):
-        if statement not in host:
-            host = statement + "\n" + host
+    # Keep all imports after the module docstring and any __future__ imports.
+    # Prepending these imports would make generated host.py fail at runtime because
+    # Python requires "from __future__" statements to precede ordinary imports.
+    needed = ("import json", "import os", "import socket", "import time")
+    lines = host.splitlines(keepends=True)
+    missing = [
+        statement for statement in needed
+        if not any(line.strip() == statement for line in lines)
+    ]
+    if missing:
+        future_indexes = [
+            i for i, line in enumerate(lines)
+            if line.lstrip().startswith("from __future__ import ")
+        ]
+        if future_indexes:
+            insert_at = max(future_indexes) + 1
+        else:
+            # Host sources normally have a future import. If not, insert after
+            # the shebang and module docstring instead of before the docstring.
+            insert_at = 0
+            if lines and lines[0].startswith("#!"):
+                insert_at = 1
+            while insert_at < len(lines) and lines[insert_at].lstrip().startswith("#"):
+                insert_at += 1
+            if insert_at < len(lines) and lines[insert_at].lstrip().startswith(('"""', "'''")):
+                quote = lines[insert_at].lstrip()[:3]
+                if lines[insert_at].count(quote) >= 2:
+                    insert_at += 1
+                else:
+                    insert_at += 1
+                    while insert_at < len(lines) and quote not in lines[insert_at - 1]:
+                        insert_at += 1
+        lines[insert_at:insert_at] = [statement + "\n" for statement in missing]
+        host = "".join(lines)
+    if not host.lstrip().startswith("#!") and not host.lstrip().startswith('"""'):
+        # Keep source parsing deterministic; py_compile in CI is the final guard.
+        pass
     if "_mlbb_emulator_route_enabled" not in host:
         if host.count(VALID_EVENT) != 1:
             raise SystemExit("The expected host valid_event function was not found exactly once")
