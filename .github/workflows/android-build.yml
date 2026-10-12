@@ -466,7 +466,7 @@ jobs:
           - **Android 8+ permission flow:** check canRequestPackageInstalls(), open per-app install-source settings when needed, save the verified pending APK across Activity recreation, and continue automatically after permission is granted.
           - Installer launch is restricted to the foreground Activity, with clear error feedback when Package Installer is disabled or unavailable.
           - PC host script and updated source bundle are included as release assets.
-          - Android versionName 0.14.1 / versionCode 16.
+          - Android versionName 0.14.1 / versionCode 17.
 
           ## Release assets
           - MLBB-Link-Phone-Controller.apk — Android controller app.
