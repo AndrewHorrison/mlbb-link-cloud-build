@@ -2,7 +2,7 @@
 
 A community controller for Mobile Legends: Bang Bang using an Android phone controller, a Python PC host, and the Waydroid touch bridge.
 
-## v0.14.0 — skill input fix, lower latency, refreshed HUD
+## v0.14.0 — custom HUD editor, cooldown reduction presets, and input fixes
 
 - **Skill taps:** quick taps now use a normal tap event; the app starts a continuous aim stroke only after your finger intentionally moves. This targets the issue where Skill 1 and Skill 2 could fail while Ultimate worked.
 - **Lower input latency:** the Android sender caches the PC IP resolution and coalesces old joystick/aim movement samples instead of letting a slow queue build up.
