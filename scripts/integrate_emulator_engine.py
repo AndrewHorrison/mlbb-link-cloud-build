@@ -65,7 +65,7 @@ def main() -> int:
         if host.count(VALID_EVENT) != 1:
             raise SystemExit("The expected host valid_event function was not found exactly once")
         host = host.replace(VALID_EVENT, VALID_EVENT + "\n\n" + HELPERS, 1)
-    elif "engine.ready" not in host or "127.0.0.1", 28743 not in host:
+    elif "engine.ready" not in host or '("127.0.0.1", 28743)' not in host:
         raise SystemExit("Partial emulator route exists but readiness/loopback relay markers are missing")
 
     route_marker = "            forwarded = False"
