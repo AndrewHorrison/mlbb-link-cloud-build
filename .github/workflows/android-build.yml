@@ -353,13 +353,14 @@ jobs:
           print(f"Verified {len(heroes)} hero entries, {len(heroes)*3} skill icons, skill details, and all Sora form icons")
           PYCODE
 
-      - name: Fix skill tap/aim, reduce latency, and update HUD for v0.13.0
+      - name: Fix skill tap/aim, reduce latency, and update HUD for v0.14.0
         run: |
           set -euo pipefail
           python3 scripts/enhance_pc_dashboard.py source/mlbb-link
           python3 scripts/enable_in_app_updates.py source/mlbb-link
           python3 scripts/fix_skill_connection_ui.py source/mlbb-link
-          python3 -m py_compile source/mlbb-link/host/mlbb_link_host.py scripts/enhance_pc_dashboard.py scripts/enable_in_app_updates.py scripts/fix_skill_connection_ui.py
+          python3 scripts/add_hud_layout_editor.py source/mlbb-link
+          python3 -m py_compile source/mlbb-link/host/mlbb_link_host.py scripts/enhance_pc_dashboard.py scripts/enable_in_app_updates.py scripts/fix_skill_connection_ui.py scripts/add_hud_layout_editor.py
           grep -q 'panel-usb' source/mlbb-link/host/mlbb_link_host.py
           grep -q 'panel-bluetooth' source/mlbb-link/host/mlbb_link_host.py
           grep -q 'panel-dual' source/mlbb-link/host/mlbb_link_host.py
@@ -367,7 +368,11 @@ jobs:
           grep -q 'aimGestureStarted' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
           grep -q 'pendingJoystickMove' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
           grep -q 'drawMiniMap(canvas)' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
-          grep -q 'android:label="MLBB Link v0.13.0"' source/mlbb-link/phone-controller/app/src/main/AndroidManifest.xml
+          grep -q 'private void loadHudLayout()' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
+          grep -q 'drawHudEditorButton(canvas)' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
+          grep -q 'drawCdrButton(canvas)' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
+          grep -q 'private void saveHudLayout()' source/mlbb-link/phone-controller/app/src/main/java/com/mlbblink/controller/MainActivity.java
+          grep -q 'android:label="MLBB Link v0.14.0"' source/mlbb-link/phone-controller/app/src/main/AndroidManifest.xml
           grep -q 'FileProvider' source/mlbb-link/phone-controller/app/src/main/AndroidManifest.xml
           test -s source/mlbb-link/phone-controller/app/src/main/res/xml/file_paths.xml
           python3 - <<'PYCODE'
@@ -440,13 +445,15 @@ jobs:
           - In-game-inspired HUD with a translucent minimap and larger skill buttons, inspired by community custom-layout preferences.
           - Wi-Fi instructions show the PC LAN address and UDP controller port (28741), with copy-IP support.
           - Skill taps are now sent as ordinary taps; a drag starts an aiming gesture only after the finger moves past a small threshold.
+          - **Editable HUD:** tap EDIT HUD, drag joystick/skills/attack/spell/mic/level-up controls, then tap SAVE HUD. Hold SAVE HUD for 0.7 seconds to restore defaults. Layout positions persist on this device.
+          - **Manual cooldown reduction:** tap the CDR chip to cycle 0%, 10%, 20%, 30%, and 40%. Cooldown countdowns use the selected estimate, saved locally; this is not live game telemetry.
           - Bluetooth Beta pairing and RFCOMM setup guidance. Bluetooth is experimental and may not work on every device.
           - Low-latency sender coalesces old joystick/aim movement samples and resolves the PC IP once instead of for every packet.
           - App launcher name and HUD identify the version as MLBB Link v0.13.0.
           - No browser page is opened for the APK download. Android still requires user approval; if needed, MLBB Link opens Android's per-app install permission settings.
           - In-app updater still downloads the APK inside MLBB Link with progress, verifies SHA-256, then opens Android's native installer.
           - PC host script and updated source bundle are included as release assets.
-          - Android versionName 0.13.0 / versionCode 15.
+          - Android versionName 0.13.0 / versionCode 16.
 
           ## Release assets
           - MLBB-Link-Phone-Controller.apk — Android controller app.
