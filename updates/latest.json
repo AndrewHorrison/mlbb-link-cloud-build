@@ -1,12 +1,12 @@
 {
-  "versionCode": 17,
-  "versionName": "0.14.1",
-  "hostVersion": "0.14.1",
-  "phoneApkSha256": "f12ec2161c4afc55b8aaecd65d0d75d856ac0ac465191b61acab5dd1b2279766",
-  "bridgeApkSha256": "a85899ec1d008399f285eb2ad75a0d9a584dbbf021df927b14439cd002f2e71f",
-  "phoneApkUrl": "https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/v0.14.1/MLBB-Link-Phone-Controller.apk",
-  "bridgeApkUrl": "https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/v0.14.1/MLBB-Link-Touch-Bridge.apk",
-  "hostScriptUrl": "https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/v0.14.1/mlbb_link_host.py",
-  "sourceUrl": "https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/v0.14.1/MLBB-Link-Updated-Source.tar.gz",
-  "releaseUrl": "https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/tag/v0.14.1"
+  "versionCode": 18,
+  "versionName": "0.15.0",
+  "hostVersion": "0.15.0",
+  "phoneApkSha256": "e7a085c634df50ebf575bea37b55b2254cfee0059afa004886c9bca297e1bb6d",
+  "bridgeApkSha256": "ab25554d9c37c8d7fca3515157c5ed9d0d04f84eb2ebe73397266abb87cb43ef",
+  "phoneApkUrl": "https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/v0.15.0/MLBB-Link-Phone-Controller.apk",
+  "bridgeApkUrl": "https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/v0.15.0/MLBB-Link-Touch-Bridge.apk",
+  "hostScriptUrl": "https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/v0.15.0/mlbb_link_host.py",
+  "sourceUrl": "https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/v0.15.0/MLBB-Link-Updated-Source.tar.gz",
+  "releaseUrl": "https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/tag/v0.15.0"
 }
