@@ -4,8 +4,8 @@ from __future__ import annotations
 import json, re, sys
 from pathlib import Path
 
-VERSION = "0.13.0"
-VERSION_CODE = 15
+VERSION = "0.14.0"
+VERSION_CODE = 16
 
 def once(text, old, new, label):
     n = text.count(old)
