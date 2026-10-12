@@ -14,11 +14,10 @@ A community controller for Mobile Legends: Bang Bang using an Android phone cont
 - PC dashboard includes Overview, Wi-Fi, USB, Bluetooth Beta, Dual Connection, and Updates tabs.
 - Current app version: **versionName 0.14.0 / versionCode 16**.
 
-## Important first upgrade note
+## Upgrade notes
 
-The private signing key that produced the v0.12.0 APK was not present in the repository or build artifacts, so v0.14.0 establishes a new private signing key stored in the repository-scoped GitHub Actions cache. **Android may reject installing v0.14.0 over v0.12.0.** If it does, save your PC IP first, uninstall the old controller and bridge, then install the v0.14.0 APKs. Uninstalling removes their local settings. The build workflow is configured to reuse the new key for future versions; never publish that key as a release asset.
+The v0.14.0 build is configured to reuse the repository-scoped signing-key cache established by v0.13.0, so Android should accept this as an in-place update and retain app settings. If Android reports a signature mismatch, do not uninstall immediately if you need to preserve settings; share the exact error first. The updater verifies the APK's SHA-256 checksum and Android still asks you to approve installation.
 
-Android still requires user approval for APK installation; this app cannot silently install its own update.
 
 ## Install and connect
 
