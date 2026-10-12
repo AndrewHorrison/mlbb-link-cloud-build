@@ -168,6 +168,9 @@ def validate_profile(raw: Any) -> dict[str, Any]:
                 normal_names.append(text)
         if not normal_names:
             raise ValueError(f"Mapping {identifier}: no usable button names")
+        identity = re.sub(r"[^a-z0-9]+", "", identifier.lower())
+        if identity and identity not in normal_names:
+            normal_names.insert(0, identity)
         key = _normalise_key(item.get("key", ""))
         checked.append({
             **item,
