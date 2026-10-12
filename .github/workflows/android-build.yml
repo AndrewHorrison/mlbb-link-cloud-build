@@ -463,7 +463,7 @@ jobs:
           - MLBB-Link-Updated-Source.tar.gz — updated project source.
 
           ## Upgrade notes
-          Important first-upgrade note: the private signing key that produced the previous v0.12.0 APK was not present in the repository or build artifacts, so this first v0.14.0 APK uses a new private key which the workflow now caches for future releases. Android may reject installing v0.14.0 over v0.12.0. If that happens, save your PC IP, uninstall v0.12.0, then install v0.14.0. This removes the old app's local settings. Future builds should reuse the cached v0.14.0 signing key. Android still requires approval to install updates. Stop and restart the PC host after replacing its Python script.
+The v0.14.0 build uses the same repository-scoped GitHub Actions signing-key cache established by v0.13.0, so Android should accept it as an in-place update and retain local settings. If Android reports a signature mismatch, do not uninstall immediately if you need to preserve settings; share the exact error first. Android still requires user approval to install updates. Stop and restart the PC host after replacing its Python script.
 
           ## Known limitations
           - The fix is CI-built but still needs on-device verification in Practice Mode. Bluetooth and Dual Connection failover require real-device testing; a brief input interruption can occur when a cable is unplugged.
