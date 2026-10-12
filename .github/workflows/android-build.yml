@@ -437,7 +437,7 @@ jobs:
           cp source/mlbb-link/phone-controller/app/build/outputs/apk/debug/app-debug.apk output/MLBB-Link-Phone-Controller.apk
           cp source/mlbb-link/host/mlbb_link_host.py output/mlbb_link_host.py
           cat > output/RELEASE_NOTES.md <<'NOTES'
-          # MLBB Link v0.13.0
+          # MLBB Link v0.14.0
 
           A community release for connecting an Android controller to the MLBB Link host on a PC / Waydroid setup. This release adds an in-app Android updater.
 
@@ -449,11 +449,11 @@ jobs:
           - **Manual cooldown reduction:** tap the CDR chip to cycle 0%, 10%, 20%, 30%, and 40%. Cooldown countdowns use the selected estimate, saved locally; this is not live game telemetry.
           - Bluetooth Beta pairing and RFCOMM setup guidance. Bluetooth is experimental and may not work on every device.
           - Low-latency sender coalesces old joystick/aim movement samples and resolves the PC IP once instead of for every packet.
-          - App launcher name and HUD identify the version as MLBB Link v0.13.0.
+          - App launcher name and HUD identify the version as MLBB Link v0.14.0.
           - No browser page is opened for the APK download. Android still requires user approval; if needed, MLBB Link opens Android's per-app install permission settings.
           - In-app updater still downloads the APK inside MLBB Link with progress, verifies SHA-256, then opens Android's native installer.
           - PC host script and updated source bundle are included as release assets.
-          - Android versionName 0.13.0 / versionCode 16.
+          - Android versionName 0.14.0 / versionCode 16.
 
           ## Release assets
           - MLBB-Link-Phone-Controller.apk — Android controller app.
@@ -463,7 +463,7 @@ jobs:
           - MLBB-Link-Updated-Source.tar.gz — updated project source.
 
           ## Upgrade notes
-          Important first-upgrade note: the private signing key that produced the previous v0.12.0 APK was not present in the repository or build artifacts, so this first v0.13.0 APK uses a new private key which the workflow now caches for future releases. Android may reject installing v0.13.0 over v0.12.0. If that happens, save your PC IP, uninstall v0.12.0, then install v0.13.0. This removes the old app's local settings. Future builds should reuse the cached v0.13.0 signing key. Android still requires approval to install updates. Stop and restart the PC host after replacing its Python script.
+          Important first-upgrade note: the private signing key that produced the previous v0.12.0 APK was not present in the repository or build artifacts, so this first v0.14.0 APK uses a new private key which the workflow now caches for future releases. Android may reject installing v0.14.0 over v0.12.0. If that happens, save your PC IP, uninstall v0.12.0, then install v0.14.0. This removes the old app's local settings. Future builds should reuse the cached v0.14.0 signing key. Android still requires approval to install updates. Stop and restart the PC host after replacing its Python script.
 
           ## Known limitations
           - The fix is CI-built but still needs on-device verification in Practice Mode. Bluetooth and Dual Connection failover require real-device testing; a brief input interruption can occur when a cable is unplugged.
@@ -476,7 +476,7 @@ jobs:
           sha256sum MLBB-Link-Touch-Bridge.apk MLBB-Link-Phone-Controller.apk > SHA256SUMS.txt
           zip -q MLBB-Link-APKs.zip MLBB-Link-Touch-Bridge.apk MLBB-Link-Phone-Controller.apk SHA256SUMS.txt
 
-      - name: Publish normal v0.13.0 release and refresh update manifest
+      - name: Publish versioned MLBB Link release and refresh update manifest
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
