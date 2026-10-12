@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "name": "MLBB Landscape",
+  "description": "Starter desktop key map; calibrate its target rectangle and button positions to your Android window and in-game HUD.",
+  "screen": {
+    "width": 1920,
+    "height": 1080,
+    "targetRect": {
+      "x": 0,
+      "y": 0,
+      "width": 1920,
+      "height": 1080
+    }
+  },
+  "touch": {
+    "maxPoints": 10,
+    "joystickFullTravel": 0.14,
+    "skillAimFullTravel": 0.16
+  },
+  "mappings": [
+    {
+      "id": "joystick",
+      "label": "Move",
+      "kind": "joystick",
+      "buttonNames": ["joystick", "move"],
+      "key": "",
+      "x": 0.16,
+      "y": 0.75,
+      "radius": 0.14,
+      "deadzone": 0.035,
+      "enabled": true
+    },
+    {
+      "id": "skill1",
+      "label": "Skill 1",
+      "kind": "skill",
+      "buttonNames": ["skill1", "skill_1", "s1"],
+      "key": "Q",
+      "x": 0.77,
+      "y": 0.72,
+      "radius": 0.105,
+      "deadzone": 0.018,
+      "enabled": true
+    },
+    {
+      "id": "skill2",
+      "label": "Skill 2",
+      "kind": "skill",
+      "buttonNames": ["skill2", "skill_2", "s2"],
+      "key": "W",
+      "x": 0.84,
+      "y": 0.64,
+      "radius": 0.105,
+      "deadzone": 0.018,
+      "enabled": true
+    },
+    {
+      "id": "skill3",
+      "label": "Ultimate",
+      "kind": "skill",
+      "buttonNames": ["skill3", "skill_3", "ultimate", "ult"],
+      "key": "R",
+      "x": 0.92,
+      "y": 0.56,
+      "radius": 0.115,
+      "deadzone": 0.018,
+      "enabled": true
+    },
+    {
+      "id": "attack",
+      "label": "Attack",
+      "kind": "tap",
+      "buttonNames": ["attack", "basic_attack", "attack_button"],
+      "key": "E",
+      "x": 0.91,
+      "y": 0.82,
+      "radius": 0.055,
+      "deadzone": 0.0,
+      "enabled": true
+    },
+    {
+      "id": "battle_spell",
+      "label": "Battle Spell",
+      "kind": "tap",
+      "buttonNames": ["battle_spell", "spell", "flicker"],
+      "key": "F",
+      "x": 0.72,
+      "y": 0.84,
+      "radius": 0.05,
+      "deadzone": 0.0,
+      "enabled": true
+    },
+    {
+      "id": "recall",
+      "label": "Recall",
+      "kind": "tap",
+      "buttonNames": ["recall"],
+      "key": "G",
+      "x": 0.57,
+      "y": 0.86,
+      "radius": 0.035,
+      "deadzone": 0.0,
+      "enabled": true
+    },
+    {
+      "id": "regen",
+      "label": "Regen",
+      "kind": "tap",
+      "buttonNames": ["regen"],
+      "key": "T",
+      "x": 0.64,
+      "y": 0.84,
+      "radius": 0.035,
+      "deadzone": 0.0,
+      "enabled": true
+    }
+  ]
+}
