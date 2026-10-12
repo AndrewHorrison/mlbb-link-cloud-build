@@ -57,7 +57,9 @@ def main() -> int:
         raise SystemExit("Phone controller source, manifest, or Gradle file is missing")
     java = java_path.read_text(encoding="utf-8")
     for imp in (
-        "import android.app.ProgressDialog;", "import java.io.File;", "import java.io.FileOutputStream;",
+        "import android.app.ProgressDialog;", "import android.content.ActivityNotFoundException;",
+        "import android.content.ClipData;", "import android.content.Intent;", "import android.net.Uri;",
+        "import android.provider.Settings;", "import java.io.File;", "import java.io.FileOutputStream;",
         "import java.io.IOException;", "import java.io.InputStream;", "import java.security.MessageDigest;",
         "import java.util.Locale;", "import androidx.core.content.FileProvider;",
     ):
@@ -68,7 +70,7 @@ def main() -> int:
     if "private volatile File pendingUpdateApk;" not in java:
         old = "    private final ExecutorService updateExecutor = Executors.newSingleThreadExecutor();"
         if old not in java: raise SystemExit("Updater executor field missing")
-        java = java.replace(old, old + "\n    private volatile File pendingUpdateApk;\n    private volatile boolean updateDownloading = false;", 1)
+        java = java.replace(old, old + "\n    private volatile File pendingUpdateApk;\n    private volatile boolean updateDownloading = false;\n    private static final String PENDING_UPDATE_APK_KEY = \"pending_update_apk_path\";\n    private static final int REQUEST_INSTALL_UNKNOWN_SOURCES = 6410;\n    private static final String APK_MIME_TYPE = \"application/vnd.android.package-archive\";", 1)
 
     replacement = r'''    private void checkForUpdates() {
         updateExecutor.execute(() -> {
@@ -177,7 +179,7 @@ def main() -> int:
                     Toast.makeText(MainActivity.this,
                         checksumChecked ? "Download complete · SHA-256 verified" : "Download complete · checksum not provided",
                         Toast.LENGTH_SHORT).show();
-                    launchUpdateInstaller(ready);
+                    installApk(ready);
                 });
             } catch (Exception e) {
                 if (part != null && part.exists()) part.delete();
@@ -193,28 +195,94 @@ def main() -> int:
         });
     }
 
-    private void launchUpdateInstaller(File apk) {
-        if (apk == null || !apk.isFile()) {
-            Toast.makeText(this, "Downloaded update file is missing", Toast.LENGTH_LONG).show(); return;
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !getPackageManager().canRequestPackageInstalls()) {
-            pendingUpdateApk = apk;
-            new AlertDialog.Builder(this)
-                .setTitle("Allow MLBB Link updates")
-                .setMessage("Android requires permission to install updates downloaded by MLBB Link. Enable ‘Allow from this source’ on the next screen; the installer will open when you return.")
-                .setPositiveButton("OPEN SETTINGS", (d, w) -> startActivity(new Intent(
-                    android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName()))))
-                .setNegativeButton("NOT NOW", (d, w) -> pendingUpdateApk = null).show();
+    private void clearPendingInstall() {
+        pendingUpdateApk = null;
+        getSharedPreferences(PREFS, MODE_PRIVATE).edit().remove(PENDING_UPDATE_APK_KEY).apply();
+    }
+
+    private void installApk(File file) {
+        if (isFinishing() || isDestroyed()) return;
+        if (file == null || !file.isFile() || !file.canRead() || file.length() <= 0L) {
+            Toast.makeText(this, "Downloaded APK is missing or unreadable. Download it again.", Toast.LENGTH_LONG).show();
+            clearPendingInstall();
             return;
         }
+
         try {
-            Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", apk);
-            Intent install = new Intent(Intent.ACTION_INSTALL_PACKAGE);
-            install.setData(uri); install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            install.putExtra(Intent.EXTRA_RETURN_RESULT, true);
-            startActivity(install);
+            File baseDir = getExternalFilesDir(null);
+            if (baseDir == null) throw new IOException("App storage is unavailable");
+            File updatesRoot = new File(baseDir, "updates").getCanonicalFile();
+            File apk = file.getCanonicalFile();
+            String updatesPrefix = updatesRoot.getPath() + File.separator;
+            if (!apk.getPath().startsWith(updatesPrefix)
+                    || !apk.getName().toLowerCase(Locale.ROOT).endsWith(".apk")) {
+                Toast.makeText(this, "Only an APK downloaded by MLBB Link can be installed.", Toast.LENGTH_LONG).show();
+                clearPendingInstall();
+                return;
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !getPackageManager().canRequestPackageInstalls()) {
+                pendingUpdateApk = apk;
+                getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+                        .putString(PENDING_UPDATE_APK_KEY, apk.getAbsolutePath()).apply();
+                new AlertDialog.Builder(this)
+                    .setTitle("Allow MLBB Link to install updates")
+                    .setMessage("Android blocks APK installation until you allow this app to install unknown apps. Enable “Allow from this source” on the next screen, then return. The verified APK will open automatically.")
+                    .setPositiveButton("OPEN SETTINGS", (dialog, which) -> {
+                        try {
+                            Intent settings = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                    Uri.parse("package:" + getPackageName()));
+                            settings.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                            startActivityForResult(settings, REQUEST_INSTALL_UNKNOWN_SOURCES);
+                        } catch (ActivityNotFoundException settingsNotAvailable) {
+                            try {
+                                startActivity(new Intent(Settings.ACTION_SECURITY_SETTINGS)
+                                        .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+                            } catch (Exception fallbackFailure) {
+                                Toast.makeText(MainActivity.this,
+                                    "Open Settings → Apps → Special app access → Install unknown apps, then allow MLBB Link.",
+                                    Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    })
+                    .setNegativeButton("NOT NOW", (dialog, which) -> clearPendingInstall())
+                    .show();
+                return;
+            }
+
+            Uri apkUri = FileProvider.getUriForFile(
+                    this, getPackageName() + ".fileprovider", apk);
+            int flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    | Intent.FLAG_ACTIVITY_NEW_TASK
+                    | Intent.FLAG_ACTIVITY_CLEAR_TOP;
+            Intent installIntent = new Intent(Intent.ACTION_INSTALL_PACKAGE);
+            installIntent.setDataAndType(apkUri, APK_MIME_TYPE);
+            installIntent.setClipData(ClipData.newRawUri("MLBB Link update APK", apkUri));
+            installIntent.addFlags(flags);
+            installIntent.putExtra(Intent.EXTRA_RETURN_RESULT, true);
+
+            // Clear the saved request before leaving for Package Installer, preventing
+            // onResume from accidentally opening a second installer after focus returns.
+            clearPendingInstall();
+            try {
+                startActivity(installIntent);
+            } catch (ActivityNotFoundException noInstallPackageHandler) {
+                // Some OEM / Waydroid images expose ACTION_VIEW instead of ACTION_INSTALL_PACKAGE.
+                Intent viewIntent = new Intent(Intent.ACTION_VIEW);
+                viewIntent.setDataAndType(apkUri, APK_MIME_TYPE);
+                viewIntent.setClipData(ClipData.newRawUri("MLBB Link update APK", apkUri));
+                viewIntent.addFlags(flags);
+                startActivity(viewIntent);
+            }
+        } catch (ActivityNotFoundException e) {
+            Toast.makeText(this, "Android's package installer is unavailable or disabled.", Toast.LENGTH_LONG).show();
+        } catch (SecurityException e) {
+            Toast.makeText(this, "Android blocked installation. Check “Allow from this source” for MLBB Link.", Toast.LENGTH_LONG).show();
         } catch (Exception e) {
-            Toast.makeText(this, "Could not open Android installer: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            String message = e.getMessage();
+            Toast.makeText(this, "Could not open Android installer" +
+                    (message == null || message.trim().isEmpty() ? "." : ": " + message),
+                    Toast.LENGTH_LONG).show();
         }
     }
 '''
@@ -222,10 +290,18 @@ def main() -> int:
     if "protected void onResume()" not in java:
         on_resume = '''    @Override protected void onResume() {
         super.onResume();
+        if (isFinishing() || isDestroyed()) return;
         File ready = pendingUpdateApk;
-        if (ready != null && (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || getPackageManager().canRequestPackageInstalls())) {
+        if (ready == null) {
+            String path = getSharedPreferences(PREFS, MODE_PRIVATE).getString(PENDING_UPDATE_APK_KEY, null);
+            if (path != null && !path.trim().isEmpty()) ready = new File(path);
+        }
+        if (ready == null) return;
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || getPackageManager().canRequestPackageInstalls()) {
             pendingUpdateApk = null;
-            launchUpdateInstaller(ready);
+            installApk(ready);
+        } else {
+            Toast.makeText(this, "Allow MLBB Link to install unknown apps in Android Settings, then return.", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -264,7 +340,12 @@ def main() -> int:
     gradle_path.write_text(gradle, encoding="utf-8")
     if 'startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(download)))' in java:
         raise SystemExit("Browser-based APK update action still present")
-    for marker in ("DOWNLOAD IN APP", "downloadAndInstallApk", "SHA-256 verification failed", "FileProvider.getUriForFile"):
+    for marker in ("DOWNLOAD IN APP", "downloadAndInstallApk", "SHA-256 verification failed",
+                   "private void installApk(File file)", "FileProvider.getUriForFile",
+                   "setDataAndType(apkUri, APK_MIME_TYPE)", "Intent.FLAG_GRANT_READ_URI_PERMISSION",
+                   "Intent.FLAG_ACTIVITY_NEW_TASK", "Intent.FLAG_ACTIVITY_CLEAR_TOP",
+                   "canRequestPackageInstalls()", "Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES",
+                   "PENDING_UPDATE_APK_KEY", "setClipData("):
         if marker not in java: raise SystemExit("In-app updater verification failed: " + marker)
     if "android.permission.REQUEST_INSTALL_PACKAGES" not in manifest or "androidx.core.content.FileProvider" not in manifest:
         raise SystemExit("Installer permission / FileProvider manifest setup is missing")
