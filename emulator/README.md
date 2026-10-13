@@ -1,4 +1,4 @@
-# MLBB Link Emulator Tools v0.15.0
+# MLBB Link Emulator Tools v0.16.0
 
 A Linux companion for the MLBB Link Android phone controller and existing PC host. It adds a saved keymap editor, a local multi-touch input engine, and a checksum-verified updater for the Linux tools. It does not replace GNOME or silently change Android images or system packages.
 
@@ -98,7 +98,7 @@ The GUI switches to emulator route only after the engine starts. On stop or engi
 
 Download and extract the **MLBB-Link-Emulator-Tools.tar.gz** asset from:
 
-https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/tag/v0.15.0
+https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/tag/v0.16.0
 
 Open a host terminal in the extracted folder and run:
 
@@ -119,6 +119,22 @@ User settings are kept outside the app directory:
 - App and virtual environment: ~/.local/share/mlbb-link-emulator/
 
 Normal tool updates do not overwrite the user's custom profile.
+
+## Validate the profile before enabling injection
+
+You can validate the bundled or saved mapping without opening `/dev/uinput`, creating virtual touches, or starting a UDP listener:
+
+~~~bash
+python3 input_engine.py --profile profile_default.json --check-profile
+~~~
+
+To check your saved mapping instead:
+
+~~~bash
+python3 input_engine.py --profile ~/.config/mlbb-link-emulator/profile.json --check-profile
+~~~
+
+The command reports the mapping count, display geometry and selected route. It exits non-zero if the profile is malformed or its target rectangle lies outside the selected display. It does not change settings or alter your Waydroid image.
 
 ## Use the overlay editor
 

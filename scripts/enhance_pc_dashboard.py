@@ -4,8 +4,8 @@ from __future__ import annotations
 import json, re, sys
 from pathlib import Path
 
-VERSION = "0.15.0"
-VERSION_CODE = 18
+VERSION = "0.16.0"
+VERSION_CODE = 19
 
 def once(text, old, new, label):
     n = text.count(old)
@@ -58,7 +58,7 @@ def main():
 function showConnectionTab(name){document.querySelectorAll('.connection-tab').forEach(el=>{const active=el.id==='tab-'+name;el.classList.toggle('active',active);el.setAttribute('aria-selected',active?'true':'false');});document.querySelectorAll('.connection-panel').forEach(el=>el.classList.toggle('active',el.id==='panel-'+name));}
 async function copyText(value,button){const original=button.textContent;try{await navigator.clipboard.writeText(value);}catch(e){const el=document.createElement('textarea');el.value=value;document.body.appendChild(el);el.select();document.execCommand('copy');el.remove();}button.textContent='COPIED ✓';setTimeout(()=>button.textContent=original,1500);}
 async function copyWifiIp(button){const ip=document.getElementById('wifiHostIp').textContent;if(!ip||ip==='LAN IP NOT DETECTED'||ip==='Detecting…'){button.textContent='IP NOT READY';setTimeout(()=>button.textContent='COPY PC IP',1400);return;}await copyText(ip,button);}
-async function checkUpdate(){try{const r=await fetch('https://raw.githubusercontent.com/AndrewHorrison/mlbb-link-cloud-build/main/updates/latest.json?ts='+Date.now(),{cache:'no-store'});if(!r.ok)return;const d=await r.json();const currentCode=18;const currentHost='0.15.0';const appBanner=document.getElementById('updateBanner');if(Number(d.versionCode||0)>currentCode){appBanner.style.display='block';document.getElementById('updateText').textContent='Controller/bridge v'+d.versionName+' is newer than this PC bundle. Open the latest release and install the APKs.';}else{appBanner.style.display='none';}const hostBanner=document.getElementById('hostUpdateBanner');if(d.hostVersion&&compareVersions(d.hostVersion,currentHost)>0){hostBanner.style.display='block';document.getElementById('hostUpdateText').textContent='PC host v'+d.hostVersion+' is available.';if(d.hostScriptUrl){document.getElementById('hostDownloadLink').href=d.hostScriptUrl;document.getElementById('hostBannerDownload').href=d.hostScriptUrl;}}else{hostBanner.style.display='none';}}catch(e){}}
+async function checkUpdate(){try{const r=await fetch('https://raw.githubusercontent.com/AndrewHorrison/mlbb-link-cloud-build/main/updates/latest.json?ts='+Date.now(),{cache:'no-store'});if(!r.ok)return;const d=await r.json();const currentCode=19;const currentHost='0.16.0';const appBanner=document.getElementById('updateBanner');if(Number(d.versionCode||0)>currentCode){appBanner.style.display='block';document.getElementById('updateText').textContent='Controller/bridge v'+d.versionName+' is newer than this PC bundle. Open the latest release and install the APKs.';}else{appBanner.style.display='none';}const hostBanner=document.getElementById('hostUpdateBanner');if(d.hostVersion&&compareVersions(d.hostVersion,currentHost)>0){hostBanner.style.display='block';document.getElementById('hostUpdateText').textContent='PC host v'+d.hostVersion+' is available.';if(d.hostScriptUrl){document.getElementById('hostDownloadLink').href=d.hostScriptUrl;document.getElementById('hostBannerDownload').href=d.hostScriptUrl;}}else{hostBanner.style.display='none';}}catch(e){}}
 '''
     host = host[:start] + update_js + host[end:]
     host = once(host, '</div>\n<nav class="connection-tabs"',

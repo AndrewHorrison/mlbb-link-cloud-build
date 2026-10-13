@@ -168,6 +168,11 @@ class TouchBackend:
         raise RuntimeError(f"All {self.max_points} touch slots are in use; release a control first")
 
     def touch_down(self, token: str, x: float, y: float) -> None:
+        # Be idempotent if a sender repeats DOWN before its previous UP arrives.
+        # Reusing a tracking ID for an active Protocol-B slot is invalid; update it instead.
+        if token in self.active:
+            self.touch_move(token, x, y)
+            return
         xx, yy = self._position(x, y)
         first = not self.active
         slot = self._slot_for(token)
@@ -273,6 +278,18 @@ class InputEngine:
             if mapping.get("key"):
                 self.by_key[str(mapping["key"]).upper()] = mapping
 
+    @staticmethod
+    def _finite_coordinates(event: dict[str, Any], default_x: float, default_y: float) -> tuple[float, float] | None:
+        """Parse source coordinates and reject NaN/inf before geometry math."""
+        try:
+            x = float(event.get("x", default_x))
+            y = float(event.get("y", default_y))
+        except (TypeError, ValueError):
+            return None
+        if not (math.isfinite(x) and math.isfinite(y)):
+            return None
+        return x, y
+
     def _point(self, mapping: dict[str, Any], nx: float | None = None,
                ny: float | None = None) -> tuple[float, float]:
         rect = self.rect
@@ -333,11 +350,17 @@ class InputEngine:
         identifier = mapping["id"]
         token = "gesture:" + identifier
         state = str(event.get("state", "")).lower()
-        try:
-            x, y = float(event.get("x", 0.5)), float(event.get("y", 0.5))
-        except (TypeError, ValueError):
+        coordinates = self._finite_coordinates(event, 0.5, 0.5)
+        if coordinates is None:
             return
+        x, y = coordinates
         if state == "down":
+            if identifier in self.gestures:
+                # Keep the existing contact/tracking ID; treat duplicate DOWN as a recenter.
+                self.gestures[identifier]["origin"] = (x, y)
+                px, py = self._point(mapping)
+                self.backend.touch_move(token, px, py)
+                return
             self.gestures[identifier] = {"origin": (x, y), "token": token}
             px, py = self._point(mapping)
             self.backend.touch_down(token, px, py)
@@ -359,11 +382,17 @@ class InputEngine:
             return
         token = "joystick:" + mapping["id"]
         state = str(event.get("state", "")).lower()
-        try:
-            x, y = float(event.get("x", mapping["x"])), float(event.get("y", mapping["y"]))
-        except (TypeError, ValueError):
+        coordinates = self._finite_coordinates(event, float(mapping["x"]), float(mapping["y"]))
+        if coordinates is None:
             return
+        x, y = coordinates
         if state == "down":
+            if mapping["id"] in self.joystick_origin:
+                # Duplicate DOWN must not allocate a new tracking ID for a live contact.
+                self.joystick_origin[mapping["id"]] = (x, y)
+                px, py = self._point(mapping)
+                self.backend.touch_move(token, px, py)
+                return
             self.joystick_origin[mapping["id"]] = (x, y)
             px, py = self._point(mapping)
             self.backend.touch_down(token, px, py)
@@ -582,20 +611,46 @@ def run_server(args: argparse.Namespace) -> int:
     return 0
 
 
+def check_profile_config(args: argparse.Namespace) -> int:
+    """Validate the selected profile without touching /dev/uinput or opening a socket."""
+    settings = load_settings(args.settings)
+    profile = load_profile(Path(args.profile).expanduser())
+    screen = profile["screen"]
+    width = int(args.screen_width if args.screen_width is not None else screen["width"])
+    height = int(args.screen_height if args.screen_height is not None else screen["height"])
+    if not (320 <= width <= 16384 and 200 <= height <= 16384):
+        raise ValueError("Screen dimensions are outside the supported range")
+    target = screen["targetRect"]
+    if target["x"] + target["width"] > width or target["y"] + target["height"] > height:
+        raise ValueError("Profile targetRect falls outside the selected screen dimensions; recalibrate first")
+    print(
+        f"Profile OK: {profile['name']} | {len(profile['mappings'])} mappings | "
+        f"display {width}x{height} | route={settings['route']} | "
+        "no input device opened"
+    )
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="MLBB Link multi-touch emulator input engine")
     parser.add_argument("--profile", default=str(profile_path()))
     parser.add_argument("--settings", default=str(settings_path()))
     parser.add_argument("--bind", default="127.0.0.1", choices=("127.0.0.1",))
     parser.add_argument("--port", type=int, default=28743, choices=(28743,))
+    parser.add_argument("--screen-width", type=int, default=None, help="Override profile screen width")
+    parser.add_argument("--screen-height", type=int, default=None, help="Override profile screen height")
+    parser.add_argument("--check-profile", action="store_true",
+                        help="Validate profile/settings and display geometry without opening uinput or listening on UDP")
     parser.add_argument("--device", default="/dev/uinput")
     parser.add_argument("--backend", choices=("uinput", "log"), default="uinput")
     parser.add_argument("--capture-keyboard", action="store_true",
                         help="Opt in to reading physical keyboard EV_KEY events; can expose keystrokes, so only enable on your own trusted desktop.")
-    parser.add_argument("--version", action="version", version="MLBB Link Emulator Input Engine 0.15.0")
+    parser.add_argument("--version", action="version", version="MLBB Link Emulator Input Engine 0.16.0")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     try:
+        if args.check_profile:
+            return check_profile_config(args)
         return run_server(args)
     except Exception as exc:
         LOG.error("%s", exc)

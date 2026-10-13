@@ -13,7 +13,7 @@ import urllib.request
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable
 
-VERSION = "0.15.0"
+VERSION = "0.16.0"
 MANIFEST_URL = "https://raw.githubusercontent.com/AndrewHorrison/mlbb-link-cloud-build/main/updates/emulator-latest.json"
 RELEASE_PREFIX = "https://github.com/AndrewHorrison/mlbb-link-cloud-build/releases/download/"
 MAX_ARCHIVE_BYTES = 50 * 1024 * 1024
